@@ -1,338 +1,466 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Presence · Team availability</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <script>
+        try { const t = localStorage.getItem("presence.theme"); if (t) document.documentElement.dataset.theme = t; } catch {}
+    </script>
     <style>
-        :root {
-            --bg: #f3f4f6;
-            --surface: #ffffff;
-            --surface-2: #f8fafc;
-            --ink: #0e1726;
+        :root, [data-theme="dark"] {
+            --bg: #080c16;
+            --bg-glow-1: rgba(255, 106, 61, 0.16);
+            --bg-glow-2: rgba(52, 211, 153, 0.09);
+            --grid-line: rgba(255, 255, 255, 0.035);
+            --surface: rgba(20, 28, 46, 0.72);
+            --surface-2: rgba(255, 255, 255, 0.04);
+            --surface-solid: #121a2c;
+            --line: rgba(255, 255, 255, 0.08);
+            --line-strong: rgba(255, 255, 255, 0.16);
+            --ink: #eef2f9;
+            --ink-2: #c3cbda;
+            --muted: #8592a8;
+            --accent: #ff6a3d;
+            --accent-2: #ffb054;
+            --accent-soft: rgba(255, 106, 61, 0.14);
+            --available: #34d399;
+            --away: #fbbf24;
+            --busy: #f87171;
+            --offline: #5b6880;
+            --error: #a78bfa;
+            --track: rgba(255, 255, 255, 0.05);
+            --av-l: 24%;
+            --av-tl: 84%;
+            --shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 20px 50px rgba(0, 0, 0, 0.35);
+            --tooltip-bg: #f2f5fa;
+            --tooltip-ink: #0b1220;
+            color-scheme: dark;
+        }
+
+        [data-theme="light"] {
+            --bg: #f3f4f7;
+            --bg-glow-1: rgba(255, 106, 61, 0.12);
+            --bg-glow-2: rgba(22, 163, 74, 0.07);
+            --grid-line: rgba(14, 23, 38, 0.04);
+            --surface: rgba(255, 255, 255, 0.86);
+            --surface-2: rgba(14, 23, 38, 0.035);
+            --surface-solid: #ffffff;
+            --line: rgba(14, 23, 38, 0.09);
+            --line-strong: rgba(14, 23, 38, 0.18);
+            --ink: #0d1526;
             --ink-2: #334155;
-            --muted: #64748b;
-            --line: #e4e7ec;
-            --line-2: #eef0f3;
-            --side: #0e1726;
-            --side-2: #17233a;
-            --side-ink: #c9d3e3;
-            --accent: #ff5a1f;
-            --accent-2: #ffede5;
+            --muted: #65728a;
+            --accent: #f2551f;
+            --accent-2: #ff9a3c;
+            --accent-soft: rgba(242, 85, 31, 0.1);
             --available: #16a34a;
-            --available-bg: #e9f8ee;
             --away: #d97706;
-            --away-bg: #fff4e2;
             --busy: #dc2626;
-            --busy-bg: #fdecec;
-            --offline: #94a3b8;
-            --offline-bg: #f1f5f9;
+            --offline: #9aa6b8;
             --error: #7c3aed;
-            --error-bg: #f3edff;
-            --radius: 14px;
-            --shadow: 0 1px 2px rgba(14, 23, 38, 0.05), 0 6px 20px rgba(14, 23, 38, 0.05);
+            --track: rgba(14, 23, 38, 0.05);
+            --av-l: 90%;
+            --av-tl: 30%;
+            --shadow: 0 1px 2px rgba(14, 23, 38, 0.05), 0 12px 32px rgba(14, 23, 38, 0.07);
+            --tooltip-bg: #0d1526;
+            --tooltip-ink: #f2f5fa;
+            color-scheme: light;
+        }
+
+        :root {
+            --radius: 18px;
+            --display: "Bricolage Grotesque", "Manrope", system-ui, sans-serif;
             --mono: "JetBrains Mono", ui-monospace, monospace;
         }
 
         * { box-sizing: border-box; }
-
         html, body { margin: 0; }
 
         body {
             font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
-            color: var(--ink);
             background: var(--bg);
+            color: var(--ink);
             min-height: 100vh;
             font-size: 15px;
             -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(900px 500px at 85% -10%, var(--bg-glow-1), transparent 65%),
+                radial-gradient(700px 500px at -10% 110%, var(--bg-glow-2), transparent 60%),
+                linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 44px 44px,
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 44px 44px;
         }
 
         button, input, select { font: inherit; color: inherit; }
+        .hidden { display: none !important; }
+        .mono { font-family: var(--mono); }
+        .muted { color: var(--muted); }
+        .small { font-size: 0.82rem; }
 
-        /* ---------- Layout ---------- */
-        .shell {
-            display: grid;
-            grid-template-columns: 248px 1fr;
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            background: var(--side);
-            color: var(--side-ink);
-            padding: 22px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 22px;
+        /* ---------- Top bar ---------- */
+        .topbar {
             position: sticky;
             top: 0;
-            height: 100vh;
+            z-index: 30;
+            backdrop-filter: blur(16px) saturate(140%);
+            -webkit-backdrop-filter: blur(16px) saturate(140%);
+            background: color-mix(in srgb, var(--bg) 72%, transparent);
+            border-bottom: 1px solid var(--line);
         }
 
-        .brand {
-            display: flex;
+        .topbar-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 12px 28px;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 20px;
             align-items: center;
-            gap: 11px;
-            padding: 0 6px;
         }
+
+        .brand { display: flex; align-items: center; gap: 11px; }
 
         .brand-mark {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: var(--accent);
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
             display: grid;
             place-items: center;
-            flex: none;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            box-shadow: 0 8px 22px rgba(255, 106, 61, 0.35);
         }
 
-        .brand-mark svg { width: 20px; height: 20px; }
+        .brand-mark svg { width: 21px; height: 21px; }
+        .brand-name { font-family: var(--display); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; line-height: 1; }
+        .brand-sub { font-size: 0.74rem; color: var(--muted); margin-top: 3px; }
 
-        .brand h1 {
-            margin: 0;
-            font-size: 1.02rem;
-            font-weight: 800;
-            color: #fff;
-            letter-spacing: -0.01em;
-        }
-
-        .brand p { margin: 1px 0 0; font-size: 0.78rem; color: #8494ad; }
-
-        .nav { display: grid; gap: 2px; }
-
-        .nav-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.09em;
-            color: #66768f;
-            padding: 0 10px 6px;
-            font-weight: 700;
+        .nav {
+            justify-self: center;
+            display: flex;
+            gap: 2px;
+            padding: 4px;
+            border-radius: 14px;
+            background: var(--surface-2);
+            border: 1px solid var(--line);
+            overflow-x: auto;
+            scrollbar-width: none;
+            max-width: 100%;
         }
 
         .nav-btn {
-            display: flex;
-            align-items: center;
-            gap: 11px;
-            width: 100%;
             border: 0;
             background: transparent;
-            color: var(--side-ink);
-            padding: 9px 10px;
-            border-radius: 9px;
-            font-weight: 600;
-            font-size: 0.92rem;
+            color: var(--muted);
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.87rem;
             cursor: pointer;
-            text-align: left;
-        }
-
-        .nav-btn svg { width: 18px; height: 18px; flex: none; opacity: 0.8; }
-        .nav-btn:hover { background: var(--side-2); color: #fff; }
-        .nav-btn.active { background: var(--side-2); color: #fff; box-shadow: inset 3px 0 0 var(--accent); }
-        .nav-btn.active svg { opacity: 1; color: var(--accent); }
-
-        .sidebar-foot {
-            margin-top: auto;
-            border-top: 1px solid #1f2c44;
-            padding: 16px 6px 0;
-            display: grid;
-            gap: 10px;
-            font-size: 0.82rem;
-        }
-
-        .foot-row { display: flex; align-items: center; gap: 9px; min-width: 0; }
-        .foot-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .foot-dot { width: 8px; height: 8px; border-radius: 50%; background: #475569; flex: none; }
-        .foot-dot.on { background: var(--available); }
-        .foot-dot.live { background: var(--accent); animation: pulse 1.6s infinite; }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 90, 31, 0.6); }
-            70% { box-shadow: 0 0 0 7px rgba(255, 90, 31, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 90, 31, 0); }
-        }
-
-        .main {
-            padding: 26px 30px 40px;
-            display: grid;
-            gap: 20px;
-            align-content: start;
-            max-width: 1320px;
-            width: 100%;
-            min-width: 0;
-        }
-
-        .header {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 14px;
-            align-items: flex-end;
-            justify-content: space-between;
-        }
-
-        .header h2 { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.025em; }
-        .header p { margin: 4px 0 0; color: var(--muted); font-size: 0.93rem; }
-        .header-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-
-        .monitor-pill {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 7px 12px;
-            border-radius: 999px;
-            background: var(--surface);
-            border: 1px solid var(--line);
-            font-size: 0.82rem;
-            color: var(--muted);
-            font-weight: 600;
+            white-space: nowrap;
+            transition: color 0.15s, background 0.15s;
         }
 
-        .monitor-pill.live { color: var(--ink); border-color: #ffd2c0; background: #fff8f5; }
+        .nav-btn svg { width: 16px; height: 16px; }
+        .nav-btn:hover { color: var(--ink); }
+        .nav-btn.active { background: var(--surface-solid); color: var(--ink); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18); }
+        .nav-btn.active svg { color: var(--accent); }
 
-        /* ---------- Buttons & inputs ---------- */
+        .top-actions { display: flex; gap: 8px; align-items: center; }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: var(--surface-2);
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            color: var(--ink-2);
+        }
+
+        .icon-btn:hover { border-color: var(--line-strong); color: var(--ink); }
+        .icon-btn:disabled { opacity: 0.4; cursor: default; }
+        .icon-btn svg { width: 18px; height: 18px; }
+
+        .account-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px 4px 4px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: var(--surface-2);
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 700;
+            max-width: 220px;
+        }
+
+        .account-chip span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .account-chip .avatar { --size: 30px; }
+
+        /* ---------- Buttons ---------- */
         .btn {
             display: inline-flex;
             align-items: center;
-            gap: 7px;
+            justify-content: center;
+            gap: 8px;
             border: 1px solid var(--line);
-            background: var(--surface);
-            padding: 9px 14px;
-            border-radius: 10px;
+            background: var(--surface-2);
+            padding: 9px 15px;
+            border-radius: 12px;
             font-weight: 700;
-            font-size: 0.88rem;
+            font-size: 0.87rem;
             cursor: pointer;
-            transition: background 0.15s, border-color 0.15s, transform 0.1s;
             white-space: nowrap;
+            transition: transform 0.12s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
         }
 
         .btn svg { width: 16px; height: 16px; }
-        .btn:hover { background: var(--surface-2); border-color: #cfd5de; }
+        .btn:hover { border-color: var(--line-strong); }
         .btn:active { transform: translateY(1px); }
-        .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-        .btn-primary:hover { background: #ef4c12; border-color: #ef4c12; }
-        .btn-dark { background: var(--ink); border-color: var(--ink); color: #fff; }
-        .btn-dark:hover { background: #1d2a40; border-color: #1d2a40; }
+        .btn:disabled { opacity: 0.55; cursor: default; }
+
+        .btn-accent {
+            border: 0;
+            color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            box-shadow: 0 8px 22px rgba(255, 106, 61, 0.32);
+        }
+
+        .btn-accent:hover { box-shadow: 0 10px 28px rgba(255, 106, 61, 0.45); }
+        .btn-solid { background: var(--ink); color: var(--bg); border-color: var(--ink); }
         .btn-danger { color: var(--busy); }
-        .btn-danger:hover { background: var(--busy-bg); border-color: #f5c2c2; }
-        .btn-sm { padding: 6px 10px; font-size: 0.8rem; border-radius: 8px; }
+        .btn-danger:hover { border-color: color-mix(in srgb, var(--busy) 50%, transparent); background: color-mix(in srgb, var(--busy) 10%, transparent); }
+        .btn-sm { padding: 6px 11px; font-size: 0.8rem; border-radius: 10px; }
         .btn-link { border: 0; background: none; padding: 0; color: var(--accent); font-weight: 700; cursor: pointer; font-size: 0.85rem; }
-        .hidden { display: none !important; }
+
+        .live-btn {
+            border: 1px solid color-mix(in srgb, var(--available) 45%, transparent);
+            background: color-mix(in srgb, var(--available) 12%, transparent);
+            color: var(--ink);
+            padding: 8px 8px 8px 14px;
+        }
+
+        .live-btn .stop {
+            padding: 3px 9px;
+            border-radius: 8px;
+            background: var(--surface-solid);
+            color: var(--muted);
+            font-size: 0.75rem;
+            transition: color 0.15s;
+        }
+
+        .live-btn:hover .stop { color: var(--busy); }
+
+        .live-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--available);
+            animation: pulse 1.8s infinite;
+            flex: none;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--available) 60%, transparent); }
+            70% { box-shadow: 0 0 0 8px transparent; }
+            100% { box-shadow: 0 0 0 0 transparent; }
+        }
 
         input, select {
             border: 1px solid var(--line);
-            background: var(--surface);
-            border-radius: 10px;
-            padding: 10px 12px;
-            font-size: 0.92rem;
+            background: var(--surface-2);
+            border-radius: 12px;
+            padding: 10px 13px;
+            font-size: 0.9rem;
             width: 100%;
         }
 
-        input:focus, select:focus, .btn:focus-visible, .nav-btn:focus-visible, .person-card:focus-visible, .person-row:focus-visible {
-            outline: 2px solid var(--accent);
-            outline-offset: 2px;
+        select option { background: var(--surface-solid); color: var(--ink); }
+        input::placeholder { color: var(--muted); }
+
+        :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+        .segmented {
+            display: inline-flex;
+            padding: 3px;
+            border-radius: 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--line);
         }
 
-        /* ---------- Banners & toast ---------- */
+        .segmented button {
+            border: 0;
+            background: none;
+            padding: 6px 12px;
+            border-radius: 9px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--muted);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .segmented button.active { background: var(--surface-solid); color: var(--ink); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16); }
+
+        /* ---------- Page ---------- */
+        .page { max-width: 1400px; margin: 0 auto; padding: 28px 28px 60px; display: grid; gap: 22px; }
+
+        .page-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+        .page-head h1 { margin: 0; font-family: var(--display); font-size: 2.1rem; font-weight: 800; letter-spacing: -0.035em; line-height: 1.05; }
+        .page-head p { margin: 6px 0 0; color: var(--muted); }
+
         .banner {
-            border-radius: 12px;
-            padding: 12px 14px;
+            border-radius: 14px;
+            padding: 12px 16px;
             font-size: 0.9rem;
             display: flex;
             gap: 10px;
             align-items: flex-start;
-            background: var(--busy-bg);
-            color: #8f1d1d;
-            border: 1px solid #f5c9c9;
+            background: color-mix(in srgb, var(--busy) 12%, transparent);
+            border: 1px solid color-mix(in srgb, var(--busy) 35%, transparent);
+            color: var(--ink);
             word-break: break-word;
         }
 
-        .banner button { margin-left: auto; border: 0; background: none; color: inherit; cursor: pointer; font-weight: 800; }
+        .banner b { color: var(--busy); }
+        .banner button { margin-left: auto; border: 0; background: none; cursor: pointer; font-weight: 800; color: var(--muted); font-size: 1.1rem; line-height: 1; }
 
-        .toast {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
-            background: var(--ink);
-            color: #fff;
-            padding: 11px 16px;
-            border-radius: 11px;
-            font-size: 0.88rem;
-            font-weight: 600;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            transform: translateY(8px);
-            transition: opacity 0.2s, transform 0.2s;
-            pointer-events: none;
-            z-index: 20;
-        }
+        .view { display: none; gap: 22px; }
+        .view.active { display: grid; animation: rise 0.35s ease both; }
 
-        .toast.show { opacity: 1; transform: none; }
-
-        /* ---------- Cards ---------- */
-        .view { display: none; gap: 20px; }
-        .view.active { display: grid; }
+        @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
         .card {
             background: var(--surface);
             border: 1px solid var(--line);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-            padding: 20px;
+            padding: 22px;
             min-width: 0;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
 
-        .card-head {
+        .card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+        .card-head h3 { margin: 0; font-family: var(--display); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
+        .card-head p { margin: 3px 0 0; color: var(--muted); font-size: 0.84rem; }
+        .eyebrow { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 800; }
+
+        /* ---------- Setup ---------- */
+        .setup { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+        .step {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 14px;
+            display: grid;
+            gap: 6px;
+            background: var(--surface-2);
+            align-content: start;
+        }
+
+        .step-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            font-weight: 800;
+            font-size: 0.8rem;
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .step.done .step-num { background: color-mix(in srgb, var(--available) 18%, transparent); color: var(--available); }
+        .step.done { opacity: 0.72; }
+        .step strong { font-size: 0.92rem; }
+        .step span.muted { font-size: 0.8rem; line-height: 1.4; }
+        .step .btn { justify-self: start; margin-top: 4px; }
+
+        .paused {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 14px;
+            gap: 14px;
+            padding: 14px 18px;
+            border-radius: 16px;
+            border: 1px dashed var(--line-strong);
+            background: var(--surface-2);
             flex-wrap: wrap;
         }
 
-        .card-head h3 { margin: 0; font-size: 1.02rem; font-weight: 800; letter-spacing: -0.01em; }
-        .card-head p { margin: 2px 0 0; color: var(--muted); font-size: 0.85rem; }
-        .muted { color: var(--muted); }
-        .small { font-size: 0.82rem; }
+        .paused p { margin: 0; flex: 1; min-width: 200px; font-size: 0.9rem; color: var(--ink-2); }
 
-        .kpis { display: grid; gap: 14px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        /* ---------- Hero ---------- */
+        .hero { display: grid; grid-template-columns: 1.15fr 1fr 1fr 1fr; gap: 16px; }
 
-        .kpi {
-            background: var(--surface);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 16px 18px;
-            position: relative;
-            overflow: hidden;
+        .now-card { position: relative; overflow: hidden; }
+        .now-card::after {
+            content: "";
+            position: absolute;
+            right: -60px;
+            top: -60px;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, color-mix(in srgb, var(--available) 22%, transparent), transparent 70%);
+            pointer-events: none;
         }
 
-        .kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--kpi, var(--ink)); }
-        .kpi-label { font-size: 0.8rem; color: var(--muted); font-weight: 700; display: flex; align-items: center; gap: 7px; }
-        .kpi-value { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin-top: 4px; line-height: 1.1; }
-        .kpi-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+        .now-big { display: flex; align-items: baseline; gap: 10px; margin: 8px 0 14px; }
+        .now-big .num { font-family: var(--display); font-size: 3.6rem; font-weight: 800; letter-spacing: -0.05em; line-height: 0.9; color: var(--available); }
+        .now-big .of { color: var(--muted); font-weight: 600; }
+        .now-big .of b { color: var(--ink); }
 
-        /* ---------- Status ---------- */
-        .st-available { --st: var(--available); --st-bg: var(--available-bg); }
-        .st-away { --st: var(--away); --st-bg: var(--away-bg); }
-        .st-busy { --st: var(--busy); --st-bg: var(--busy-bg); }
-        .st-offline { --st: var(--offline); --st-bg: var(--offline-bg); }
-        .st-error { --st: var(--error); --st-bg: var(--error-bg); }
+        .compo { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--track); gap: 2px; }
+        .compo i { display: block; height: 100%; transition: flex-grow 0.4s; }
+        .compo-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+        .compo-legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .compo-legend i { width: 8px; height: 8px; border-radius: 50%; }
+
+        .stat-card .stat-big { font-family: var(--display); font-size: 2.2rem; font-weight: 800; letter-spacing: -0.04em; margin-top: 10px; line-height: 1; }
+        .stat-card .stat-sub { color: var(--muted); font-size: 0.8rem; margin-top: 8px; }
+        .stat-card .icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--line); float: right; }
+        .stat-card .icon svg { width: 17px; height: 17px; }
+
+        /* ---------- Status colours ---------- */
+        .st-available { --st: var(--available); }
+        .st-away { --st: var(--away); }
+        .st-busy { --st: var(--busy); }
+        .st-offline { --st: var(--offline); }
+        .st-error { --st: var(--error); }
 
         .pill {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 3px 9px 3px 7px;
+            padding: 3px 10px 3px 8px;
             border-radius: 999px;
-            background: var(--st-bg, var(--offline-bg));
+            background: color-mix(in srgb, var(--st, var(--offline)) 15%, transparent);
             color: var(--st, var(--muted));
-            font-size: 0.76rem;
-            font-weight: 700;
+            font-size: 0.75rem;
+            font-weight: 800;
             white-space: nowrap;
         }
 
+        [data-theme="dark"] .pill { color: color-mix(in srgb, var(--st, var(--offline)) 85%, white); }
         .pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--st, var(--offline)); }
 
         .avatar {
@@ -340,14 +468,15 @@
             width: var(--size);
             height: var(--size);
             border-radius: 50%;
-            background: hsl(var(--h), 55%, 92%);
-            color: hsl(var(--h), 45%, 32%);
+            background: hsl(var(--h) 55% var(--av-l));
+            color: hsl(var(--h) 70% var(--av-tl));
             display: grid;
             place-items: center;
             font-weight: 800;
             font-size: calc(var(--size) * 0.36);
             position: relative;
             flex: none;
+            letter-spacing: 0.02em;
         }
 
         .avatar .dot {
@@ -356,91 +485,206 @@
             bottom: -1px;
             width: calc(var(--size) * 0.32);
             height: calc(var(--size) * 0.32);
+            min-width: 9px;
+            min-height: 9px;
             border-radius: 50%;
             background: var(--st, var(--offline));
-            border: 2px solid #fff;
+            border: 2px solid var(--surface-solid);
         }
 
-        .avatar.lg { --size: 64px; }
+        .avatar .dot.st-available { box-shadow: 0 0 10px color-mix(in srgb, var(--available) 70%, transparent); }
 
-        .share {
-            height: 8px;
-            border-radius: 999px;
-            background: var(--busy-bg);
+        /* ---------- Timeline ---------- */
+        .tl-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .tl-day { font-weight: 800; font-size: 0.88rem; min-width: 120px; text-align: center; text-transform: none; letter-spacing: 0; color: var(--ink); }
+
+        .timeline { display: grid; gap: 6px; }
+        .tl-row { display: grid; grid-template-columns: 190px 1fr 64px; gap: 14px; align-items: center; }
+        .tl-row.compact { grid-template-columns: 1fr; }
+        .tl-who { display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; }
+        .tl-who .avatar { --size: 30px; }
+        .tl-who strong { font-size: 0.86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tl-share { font-family: var(--mono); font-size: 0.82rem; text-align: right; color: var(--ink-2); }
+
+        .tl-track {
+            position: relative;
+            height: 26px;
+            border-radius: 8px;
+            background: repeating-linear-gradient(135deg, transparent 0 6px, var(--track) 6px 8px);
+            border: 1px solid var(--line);
             overflow: hidden;
         }
 
-        .share.empty { background: var(--line-2); }
-        .share-fill { height: 100%; background: var(--available); border-radius: 999px; transition: width 0.4s; }
+        .tl-row.compact .tl-track { height: 34px; }
 
-        /* ---------- Team grid ---------- */
-        .team-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
+        .seg {
+            position: absolute;
+            top: 3px;
+            bottom: 3px;
+            border-radius: 4px;
+            background: var(--st);
+            min-width: 2px;
+            transition: filter 0.15s;
+        }
+
+        .seg:hover { filter: brightness(1.2); z-index: 2; }
+        .seg.adj { background: repeating-linear-gradient(135deg, var(--away) 0 4px, color-mix(in srgb, var(--away) 45%, transparent) 4px 8px); }
+        .seg.live { box-shadow: 0 0 12px color-mix(in srgb, var(--st) 60%, transparent); }
+
+        .tl-now { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--accent); z-index: 3; box-shadow: 0 0 8px var(--accent); }
+        .tl-axis { position: relative; height: 18px; margin-left: 204px; margin-right: 78px; font-family: var(--mono); font-size: 0.7rem; color: var(--muted); }
+        .tl-axis.compact { margin: 0; }
+        .tl-axis span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+        .tl-axis span:first-child { transform: none; }
+        .tl-axis span:last-child { transform: translateX(-100%); }
+        .tl-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted); font-weight: 600; margin-top: 14px; }
+        .tl-legend span { display: inline-flex; gap: 7px; align-items: center; }
+        .tl-legend i { width: 14px; height: 10px; border-radius: 3px; background: var(--st); }
+        .tl-legend i.adj { background: repeating-linear-gradient(135deg, var(--away) 0 3px, color-mix(in srgb, var(--away) 45%, transparent) 3px 6px); }
+        .tl-legend i.gap { background: repeating-linear-gradient(135deg, transparent 0 3px, var(--line-strong) 3px 4px); border: 1px solid var(--line); }
+
+        .tooltip {
+            position: fixed;
+            z-index: 50;
+            pointer-events: none;
+            background: var(--tooltip-bg);
+            color: var(--tooltip-ink);
+            padding: 8px 11px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.12s;
+            white-space: pre-line;
+            max-width: 260px;
+            left: 0;
+            top: 0;
+        }
+
+        .tooltip.show { opacity: 1; }
+
+        /* ---------- Toolbar & cards ---------- */
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+        .toolbar input { max-width: 240px; }
+        .toolbar select { width: auto; }
+        .chip-filter { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        .chip-filter button {
+            border: 1px solid var(--line);
+            background: var(--surface-2);
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--muted);
+            display: inline-flex;
+            gap: 7px;
+            align-items: center;
+        }
+
+        .chip-filter button b { color: var(--ink); font-family: var(--mono); font-size: 0.76rem; }
+        .chip-filter button.active { border-color: var(--accent); color: var(--ink); background: var(--accent-soft); }
+
+        .main-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; align-items: start; }
+
+        .team-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)); }
 
         .person-card {
             border: 1px solid var(--line);
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 16px;
-            background: var(--surface);
+            background: var(--surface-2);
             display: grid;
             gap: 14px;
             cursor: pointer;
-            transition: border-color 0.15s, box-shadow 0.15s;
+            transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+            position: relative;
+            overflow: hidden;
         }
 
-        .person-card:hover { border-color: #cdd3dc; box-shadow: 0 6px 18px rgba(14, 23, 38, 0.07); }
+        .person-card::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto 0;
+            height: 3px;
+            background: var(--st, var(--offline));
+            opacity: 0.85;
+        }
+
+        .person-card:hover { border-color: var(--line-strong); transform: translateY(-2px); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18); }
         .pc-head { display: flex; gap: 12px; align-items: center; min-width: 0; }
         .pc-name { min-width: 0; flex: 1; }
-        .pc-name strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pc-name span { display: block; font-size: 0.8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .stat-label { font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-        .stat-value { font-family: var(--mono); font-weight: 600; font-size: 0.9rem; margin-top: 2px; white-space: nowrap; }
-        .pc-share-row { display: grid; gap: 6px; }
-        .pc-share-meta { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--muted); font-weight: 600; }
+        .pc-name strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.95rem; }
+        .pc-name span { display: block; font-size: 0.78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+        .pc-body { display: flex; gap: 14px; align-items: center; }
+        .pc-stats { display: grid; gap: 5px; flex: 1; min-width: 0; }
+        .pc-stat { display: flex; justify-content: space-between; font-size: 0.8rem; gap: 8px; }
+        .pc-stat span:first-child { color: var(--muted); font-weight: 600; display: inline-flex; gap: 6px; align-items: center; }
+        .pc-stat span:first-child i { width: 7px; height: 7px; border-radius: 2px; background: var(--st); }
+        .pc-stat span:last-child { font-family: var(--mono); font-weight: 600; }
+
+        .ring-wrap { position: relative; width: 62px; height: 62px; flex: none; }
+        .ring-wrap.lg { width: 120px; height: 120px; }
+        .ring { width: 100%; height: 100%; }
+        .ring-track { fill: none; stroke: var(--track); stroke-width: 6; }
+        .ring-fill { fill: none; stroke: var(--available); stroke-width: 6; stroke-linecap: round; transition: stroke-dasharray 0.5s; }
+        .ring-label { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--mono); font-weight: 600; font-size: 0.82rem; text-align: center; }
+        .ring-wrap.lg .ring-label { font-family: var(--display); font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em; }
+        .ring-wrap.lg .ring-label small { display: block; font-family: "Manrope", sans-serif; font-size: 0.62rem; color: var(--muted); font-weight: 800; letter-spacing: 0.08em; margin-top: -2px; }
 
         .empty-state {
-            border: 1px dashed #d4d9e1;
-            border-radius: 12px;
-            padding: 28px 20px;
+            border: 1px dashed var(--line-strong);
+            border-radius: 16px;
+            padding: 30px 20px;
             text-align: center;
             color: var(--muted);
             font-size: 0.9rem;
             background: var(--surface-2);
         }
 
-        .empty-state strong { display: block; color: var(--ink); margin-bottom: 4px; font-size: 0.98rem; }
-        .empty-state .btn { margin-top: 12px; }
+        .empty-state strong { display: block; color: var(--ink); margin-bottom: 4px; font-size: 1rem; font-family: var(--display); }
+        .empty-state .btn { margin-top: 14px; }
+
+        /* ---------- Feed ---------- */
+        .feed { display: grid; }
+        .feed-item { display: grid; grid-template-columns: auto 1fr; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 0.86rem; align-items: center; }
+        .feed-item:last-child { border-bottom: 0; }
+        .feed-item .avatar { --size: 32px; }
+        .feed-item.no-avatar { grid-template-columns: 1fr; }
+        .feed-top { display: flex; justify-content: space-between; gap: 8px; }
+        .feed-top strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .feed-time { color: var(--muted); font-size: 0.75rem; white-space: nowrap; font-family: var(--mono); }
+        .feed-change { margin-top: 5px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+        .arrow { color: var(--muted); margin: 0 3px; font-size: 0.8rem; }
 
         /* ---------- Tables ---------- */
-        .table-wrap { overflow-x: auto; margin: 0 -20px -20px; border-top: 1px solid var(--line); }
-        table { width: 100%; border-collapse: collapse; min-width: 640px; }
-        th, td { text-align: left; padding: 11px 20px; border-bottom: 1px solid var(--line-2); font-size: 0.88rem; vertical-align: middle; }
-        th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 800; background: var(--surface-2); }
+        .table-wrap { overflow-x: auto; margin: 0 -22px -22px; border-top: 1px solid var(--line); }
+        table { width: 100%; border-collapse: collapse; min-width: 680px; }
+        th, td { text-align: left; padding: 12px 22px; border-bottom: 1px solid var(--line); font-size: 0.87rem; vertical-align: middle; }
+        th { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 800; background: var(--surface-2); }
         tr:last-child td { border-bottom: 0; }
+        tbody tr:hover td { background: var(--surface-2); }
         td.num { font-family: var(--mono); white-space: nowrap; }
         .who { display: flex; align-items: center; gap: 10px; }
         .who .avatar { --size: 30px; }
-        .who small { display: block; color: var(--muted); font-size: 0.76rem; }
-        .arrow { color: var(--muted); margin: 0 6px; }
-
-        .feed { display: grid; }
-        .feed-item { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line-2); font-size: 0.88rem; }
-        .feed-item:last-child { border-bottom: 0; }
-        .feed-item .avatar { --size: 30px; }
-        .feed-text { flex: 1; min-width: 0; }
-        .feed-time { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
+        .who small { display: block; color: var(--muted); font-size: 0.75rem; }
+        .bar { height: 7px; border-radius: 999px; background: color-mix(in srgb, var(--busy) 22%, transparent); overflow: hidden; }
+        .bar.empty { background: var(--track); }
+        .bar-fill { height: 100%; background: var(--available); border-radius: 999px; transition: width 0.4s; }
 
         /* ---------- People ---------- */
-        .people-layout { display: grid; gap: 20px; grid-template-columns: 320px 1fr; align-items: start; }
-        .people-list { display: grid; gap: 6px; }
+        .people-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 22px; align-items: start; }
+        .people-list { display: grid; gap: 4px; max-height: 640px; overflow-y: auto; margin: 0 -8px; padding: 0 8px; }
 
         .person-row {
             display: flex;
             gap: 11px;
             align-items: center;
-            padding: 10px;
+            padding: 9px 10px;
             border: 1px solid transparent;
-            border-radius: 10px;
+            border-radius: 12px;
             background: none;
             cursor: pointer;
             text-align: left;
@@ -449,31 +693,44 @@
 
         .person-row .avatar { --size: 34px; }
         .person-row:hover { background: var(--surface-2); }
-        .person-row.active { background: var(--accent-2); border-color: #ffd2c0; }
-        .person-row .pc-name strong { font-size: 0.9rem; }
+        .person-row.active { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+        .person-row .share-mini { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
 
-        .detail-head { display: flex; gap: 16px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
-        .detail-head h3 { margin: 0; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; }
-        .detail-head p { margin: 3px 0 0; color: var(--muted); font-size: 0.85rem; }
-        .detail-stats { display: grid; gap: 12px; grid-template-columns: repeat(3, 1fr); margin-bottom: 18px; }
-        .detail-stat { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: var(--surface-2); }
-        .detail-stat .stat-value { font-size: 1.25rem; margin-top: 6px; }
-        .section-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 800; margin: 20px 0 6px; }
+        .detail-hero { display: grid; grid-template-columns: auto 1fr auto; gap: 22px; align-items: center; margin-bottom: 6px; }
+        .detail-hero h2 { margin: 2px 0 0; font-family: var(--display); font-size: 1.7rem; font-weight: 800; letter-spacing: -0.03em; }
+        .detail-hero p { margin: 4px 0 10px; color: var(--muted); font-size: 0.86rem; }
+        .detail-stats { display: grid; gap: 12px; grid-template-columns: repeat(3, 1fr); }
+        .detail-stat { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; background: var(--surface-2); }
+        .detail-stat .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 800; display: flex; gap: 7px; align-items: center; }
+        .detail-stat .label i { width: 8px; height: 8px; border-radius: 2px; background: var(--st); }
+        .detail-stat .value { font-family: var(--mono); font-weight: 600; font-size: 1.2rem; margin-top: 6px; white-space: nowrap; }
+        .section-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 800; margin: 26px 0 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+        .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; align-items: end; height: 170px; }
+        .week-col { display: grid; grid-template-rows: 1fr auto auto; gap: 6px; height: 100%; text-align: center; cursor: pointer; }
+        .week-bar { display: flex; flex-direction: column-reverse; border-radius: 8px; overflow: hidden; background: var(--track); align-self: end; min-height: 4px; transition: height 0.4s; }
+        .week-bar i { display: block; }
+        .week-col.active .week-bar { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .week-day { font-size: 0.75rem; font-weight: 800; color: var(--muted); }
+        .week-col.active .week-day { color: var(--accent); }
+        .week-val { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-2); }
 
         /* ---------- Settings ---------- */
-        .settings-layout { display: grid; gap: 20px; grid-template-columns: 1.1fr 1fr; align-items: start; }
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
         .field-grid { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
-        .field { display: grid; gap: 6px; }
-        .field.full { grid-column: 1 / -1; }
-        .field label { font-size: 0.82rem; font-weight: 700; color: var(--ink-2); }
-        .field .hint { font-size: 0.76rem; color: var(--muted); }
-        .code { font-family: var(--mono); font-size: 0.8rem; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; word-break: break-all; }
-        .steps { margin: 0; padding-left: 20px; display: grid; gap: 10px; font-size: 0.9rem; color: var(--ink-2); line-height: 1.5; }
+        .field { display: grid; gap: 6px; align-content: start; }
+        .field label { font-size: 0.8rem; font-weight: 700; color: var(--ink-2); }
+        .field .hint { font-size: 0.75rem; color: var(--muted); }
+        .code { font-family: var(--mono); font-size: 0.78rem; background: var(--surface-2); border: 1px solid var(--line); border-radius: 7px; padding: 2px 7px; word-break: break-all; }
+        .steps { margin: 0; padding-left: 20px; display: grid; gap: 10px; font-size: 0.9rem; color: var(--ink-2); line-height: 1.55; }
+        .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .account-box { display: flex; gap: 14px; align-items: center; padding: 14px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); margin-bottom: 16px; }
+        .account-box .avatar { --size: 44px; }
+        .account-box > div { flex: 1; min-width: 0; }
 
         .search-row { display: flex; gap: 8px; flex-wrap: wrap; }
         .search-row input { flex: 1; min-width: 220px; width: auto; }
-
-        .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+        .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
 
         .chip {
             display: inline-flex;
@@ -483,13 +740,13 @@
             border-radius: 999px;
             background: var(--surface-2);
             border: 1px solid var(--line);
-            font-size: 0.84rem;
-            font-weight: 600;
+            font-size: 0.83rem;
+            font-weight: 700;
         }
 
         .chip .avatar { --size: 24px; }
-        .chip button { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 1rem; line-height: 1; padding: 2px 4px; border-radius: 50%; }
-        .chip button:hover { color: var(--busy); background: var(--busy-bg); }
+        .chip button { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 1rem; line-height: 1; padding: 2px 5px; border-radius: 50%; }
+        .chip button:hover { color: var(--busy); }
 
         .user-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
 
@@ -498,403 +755,460 @@
             gap: 11px;
             align-items: center;
             border: 1px solid var(--line);
-            border-radius: 11px;
+            border-radius: 14px;
             padding: 11px;
             cursor: pointer;
-            background: var(--surface);
+            background: var(--surface-2);
+            transition: border-color 0.15s;
         }
 
-        .user-card:hover { border-color: #cdd3dc; }
-        .user-card.checked { border-color: var(--accent); background: #fff8f5; }
+        .user-card:hover { border-color: var(--line-strong); }
+        .user-card.checked { border-color: var(--accent); background: var(--accent-soft); }
         .user-card input { width: 17px; height: 17px; accent-color: var(--accent); flex: none; margin: 0; }
         .user-card .avatar { --size: 32px; }
 
         /* ---------- Rules ---------- */
-        .rules { display: grid; gap: 20px; grid-template-columns: 1fr 1fr; align-items: start; }
-        .rules .card.wide { grid-column: 1 / -1; }
-        .rule-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; counter-reset: rule; }
+        .rules { display: grid; gap: 22px; grid-template-columns: 1fr 1fr; align-items: start; }
+        .rules .wide { grid-column: 1 / -1; }
+        .formula { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .formula-item { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: var(--surface-2); }
+        .formula-item b { font-family: var(--display); font-size: 1.05rem; display: block; margin-bottom: 8px; }
+        .formula-item code { font-family: var(--mono); font-size: 0.8rem; color: var(--ink-2); line-height: 1.6; display: block; }
+        .formula-item.hl { border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: var(--accent-soft); }
+        .rule-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 16px; counter-reset: rule; }
 
         .rule-list li {
             display: grid;
-            grid-template-columns: 28px 1fr;
-            gap: 12px;
-            font-size: 0.92rem;
-            line-height: 1.55;
+            grid-template-columns: 30px 1fr;
+            gap: 13px;
+            font-size: 0.91rem;
+            line-height: 1.6;
             color: var(--ink-2);
             counter-increment: rule;
         }
 
         .rule-list li::before {
-            content: counter(rule);
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            background: var(--accent-2);
+            content: counter(rule, decimal-leading-zero);
+            font-family: var(--mono);
+            font-weight: 600;
+            font-size: 0.78rem;
             color: var(--accent);
-            font-weight: 800;
-            display: grid;
-            place-items: center;
-            font-size: 0.85rem;
+            padding-top: 3px;
         }
 
         .rule-list strong { color: var(--ink); }
+        .example { font-size: 0.91rem; line-height: 1.65; color: var(--ink-2); }
+        .example p { margin: 0 0 12px; }
+        .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 11px 15px; border-radius: 0 12px 12px 0; font-size: 0.88rem; line-height: 1.55; color: var(--ink-2); }
 
-        .formula {
-            display: grid;
-            gap: 10px;
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translate(-50%, 10px);
+            background: var(--tooltip-bg);
+            color: var(--tooltip-ink);
+            padding: 11px 18px;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            pointer-events: none;
+            z-index: 60;
         }
 
-        .formula-row {
-            display: flex;
-            gap: 12px;
-            align-items: baseline;
-            padding: 12px 14px;
-            border-radius: 10px;
-            background: var(--surface-2);
-            border: 1px solid var(--line);
-            font-size: 0.9rem;
-            flex-wrap: wrap;
-        }
-
-        .formula-row b { min-width: 130px; }
-        .formula-row code { font-family: var(--mono); font-size: 0.84rem; color: var(--ink-2); }
-        .example { font-size: 0.9rem; line-height: 1.6; color: var(--ink-2); }
-        .example p { margin: 0 0 10px; }
-        .callout { border-left: 3px solid var(--accent); background: #fff8f5; padding: 10px 14px; border-radius: 0 10px 10px 0; font-size: 0.88rem; color: var(--ink-2); line-height: 1.5; }
+        .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
         /* ---------- Responsive ---------- */
-        @media (max-width: 1100px) {
-            .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .people-layout, .settings-layout, .rules { grid-template-columns: 1fr; }
+        @media (max-width: 1200px) {
+            .hero { grid-template-columns: 1fr 1fr; }
+            .main-grid { grid-template-columns: 1fr; }
+            .setup { grid-template-columns: 1fr 1fr; }
+            .detail-hero { grid-template-columns: auto 1fr; }
+            .detail-hero > :last-child { grid-column: 1 / -1; }
         }
 
-        @media (max-width: 860px) {
-            .shell { grid-template-columns: minmax(0, 1fr); }
-            .sidebar { position: sticky; min-width: 0; height: auto; padding: 12px; gap: 10px; z-index: 10; flex-direction: column; }
-            .nav { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; gap: 4px; max-width: 100%; scrollbar-width: none; }
-            .nav-label, .sidebar-foot { display: none; }
-            .nav-btn { padding: 8px 10px; white-space: nowrap; }
-            .nav-btn.active { box-shadow: inset 0 -2px 0 var(--accent); }
-            .main { padding: 18px 14px 30px; }
-            .field-grid, .detail-stats { grid-template-columns: 1fr; }
+        @media (max-width: 980px) {
+            .topbar-inner { grid-template-columns: 1fr auto; padding: 10px 16px; gap: 10px; }
+            .nav { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; }
+            .people-layout, .settings-grid, .rules { grid-template-columns: 1fr; }
+            .formula { grid-template-columns: 1fr 1fr; }
+            .page { padding: 20px 16px 50px; }
+            .tl-row { grid-template-columns: 120px 1fr 48px; gap: 10px; }
+            .tl-axis { margin-left: 130px; margin-right: 58px; }
         }
 
-        @media (max-width: 520px) {
-            .kpis { grid-template-columns: 1fr 1fr; }
-            .kpi-value { font-size: 1.6rem; }
-            .header h2 { font-size: 1.35rem; }
+        @media (max-width: 600px) {
+            .setup, .field-grid, .formula { grid-template-columns: 1fr; }
+            .hero { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .hero .now-card { grid-column: 1 / -1; }
+            .hero .stat-card:last-child { grid-column: 1 / -1; }
+            .stat-card { padding: 16px; }
+            .stat-card .stat-big { font-size: 1.6rem; }
+            .stat-card .icon { display: none; }
+            .tl-axis span:nth-child(even) { display: none; }
+            .detail-stats { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+            .detail-stat { padding: 10px; }
+            .detail-stat .value { font-size: 0.9rem; }
+            .page-head h1 { font-size: 1.7rem; }
+            .account-chip span:last-child, .brand-sub { display: none; }
+            .tl-row { grid-template-columns: 1fr 44px; }
+            .tl-row .tl-who { grid-column: 1 / -1; }
+            .tl-axis { margin-left: 0; margin-right: 54px; }
+            .toolbar input { max-width: none; margin-left: 0 !important; }
+            .ring-wrap.lg { width: 92px; height: 92px; }
+            .live-btn .mono { display: none; }
         }
     </style>
 </head>
 <body>
-    <div class="shell">
-        <aside class="sidebar">
+    <header class="topbar">
+        <div class="topbar-inner">
             <div class="brand">
                 <div class="brand-mark">
                     <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
                 </div>
                 <div>
-                    <h1>Presence</h1>
-                    <p>Team availability, live</p>
+                    <div class="brand-name">Presence</div>
+                    <div class="brand-sub">Team availability, live</div>
                 </div>
             </div>
 
             <nav class="nav" aria-label="Main">
-                <div class="nav-label">Monitor</div>
                 <button type="button" class="nav-btn active" data-view="dashboard">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
-                    Dashboard
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard
                 </button>
                 <button type="button" class="nav-btn" data-view="people">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5c2.2 0 3.9 1.5 4.5 4"/></svg>
-                    People
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5c2.2 0 3.9 1.5 4.5 4"/></svg>People
                 </button>
                 <button type="button" class="nav-btn" data-view="log">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>
-                    Activity log
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>Activity
                 </button>
-                <div class="nav-label" style="margin-top: 14px;">Reference</div>
                 <button type="button" class="nav-btn" data-view="rules">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 12h5"/></svg>
-                    How it's calculated
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 12h5"/></svg>How it's calculated
                 </button>
                 <button type="button" class="nav-btn" data-view="settings">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-                    Settings
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Settings
                 </button>
             </nav>
 
-            <div class="sidebar-foot">
-                <div class="foot-row"><i id="footAccountDot" class="foot-dot"></i><span id="footAccount">Not signed in</span></div>
-                <div class="foot-row"><i id="footMonitorDot" class="foot-dot"></i><span id="footMonitor">Monitor idle</span></div>
+            <div class="top-actions">
+                <button id="themeBtn" type="button" class="icon-btn" aria-label="Switch theme"></button>
+                <button id="accountChip" type="button" class="account-chip hidden" data-goto="settings"></button>
+                <button id="signInBtn" type="button" class="btn btn-solid">Sign in</button>
+                <button id="monitorBtn" type="button" class="btn btn-accent"></button>
             </div>
-        </aside>
+        </div>
+    </header>
 
-        <main class="main">
-            <header class="header">
-                <div>
-                    <h2 id="viewTitle">Dashboard</h2>
-                    <p id="viewSubtitle"></p>
-                </div>
-                <div class="header-actions">
-                    <span id="monitorPill" class="monitor-pill">Idle</span>
-                    <button id="signInBtn" type="button" class="btn btn-dark">Sign in with Microsoft</button>
-                    <button id="monitorBtn" type="button" class="btn btn-primary">
-                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                        <span>Start monitoring</span>
-                    </button>
-                    <button id="signOutBtn" type="button" class="btn hidden">Sign out</button>
-                </div>
-            </header>
+    <main class="page">
+        <div class="page-head">
+            <div>
+                <h1 id="viewTitle">Dashboard</h1>
+                <p id="viewSubtitle"></p>
+            </div>
+            <div id="periodControl" class="segmented" role="group" aria-label="Period">
+                <button type="button" data-period="today" class="active">Today</button>
+                <button type="button" data-period="7d">Last 7 days</button>
+                <button type="button" data-period="all">All time</button>
+            </div>
+        </div>
 
-            <div id="errorBanner" class="banner hidden" role="alert">
-                <span id="errorText"></span>
-                <button type="button" id="dismissError" aria-label="Dismiss">×</button>
+        <div id="errorBanner" class="banner hidden" role="alert">
+            <span id="errorText"></span>
+            <button type="button" id="dismissError" aria-label="Dismiss">×</button>
+        </div>
+
+        <!-- Dashboard -->
+        <section id="view-dashboard" class="view active">
+            <div id="setupArea"></div>
+
+            <div class="hero">
+                <article class="card now-card">
+                    <div class="eyebrow">Right now</div>
+                    <div class="now-big"><span id="nowAvailable" class="num">0</span><span class="of">of <b id="nowTotal">0</b> available</span></div>
+                    <div id="compoBar" class="compo"></div>
+                    <div id="compoLegend" class="compo-legend"></div>
+                </article>
+                <article class="card stat-card">
+                    <span class="icon" style="color: var(--ink-2);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                    <div class="eyebrow">Team online</div>
+                    <div class="stat-big" data-live="online" data-uid="__team">0s</div>
+                    <div class="stat-sub" data-period-label>Today · all tracked people</div>
+                </article>
+                <article class="card stat-card">
+                    <span class="icon" style="color: var(--available);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                    <div class="eyebrow">Team available</div>
+                    <div class="stat-big" style="color: var(--available);" data-live="available" data-uid="__team">0s</div>
+                    <div class="stat-sub">Unavailable <span class="mono" data-live="unavailable" data-uid="__team">0s</span></div>
+                </article>
+                <article class="card stat-card">
+                    <span class="icon" style="color: var(--accent);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg></span>
+                    <div class="eyebrow">Available share</div>
+                    <div class="stat-big" data-live="pct" data-uid="__team">—</div>
+                    <div class="stat-sub">of the team's online time</div>
+                </article>
             </div>
 
-            <!-- Dashboard -->
-            <section id="view-dashboard" class="view active">
-                <div class="kpis">
-                    <div class="kpi" style="--kpi: var(--ink);">
-                        <div class="kpi-label">Tracked people</div>
-                        <div id="kpiTracked" class="kpi-value">0</div>
-                        <div class="kpi-sub">on your list</div>
+            <section class="card">
+                <div class="card-head">
+                    <div>
+                        <h3>Team timeline</h3>
+                        <p>Each bar is one person's day. Hover a block for details.</p>
                     </div>
-                    <div class="kpi" style="--kpi: var(--available);">
-                        <div class="kpi-label">Available now</div>
-                        <div id="kpiAvailable" class="kpi-value">0</div>
-                        <div class="kpi-sub">status is Available</div>
-                    </div>
-                    <div class="kpi" style="--kpi: var(--away);">
-                        <div class="kpi-label">Unavailable now</div>
-                        <div id="kpiUnavailable" class="kpi-value">0</div>
-                        <div class="kpi-sub">busy, away, DND and similar</div>
-                    </div>
-                    <div class="kpi" style="--kpi: var(--offline);">
-                        <div class="kpi-label">Offline or unknown</div>
-                        <div id="kpiOffline" class="kpi-value">0</div>
-                        <div class="kpi-sub">not counted in totals</div>
-                    </div>
+                    <div class="tl-controls" data-day-nav></div>
                 </div>
+                <div id="teamTimeline"></div>
+                <div class="tl-legend">
+                    <span class="st-available"><i></i>Available</span>
+                    <span class="st-away"><i></i>Away / BRB / idle</span>
+                    <span class="st-busy"><i></i>Busy / DND</span>
+                    <span><i class="adj"></i>Away adjustment</span>
+                    <span><i class="gap"></i>Not monitored / offline</span>
+                </div>
+            </section>
 
+            <div class="main-grid">
                 <section class="card">
                     <div class="card-head">
                         <div>
-                            <h3>Team right now</h3>
-                            <p>Bar shows the share of counted online time spent Available. Click someone for detail.</p>
+                            <h3>People</h3>
+                            <p>Ring = share of online time spent Available in the selected period.</p>
                         </div>
+                    </div>
+                    <div class="toolbar">
+                        <div id="statusFilter" class="chip-filter"></div>
+                        <input id="peopleSearch" placeholder="Filter by name…" style="margin-left: auto;" />
+                        <select id="sortSelect" aria-label="Sort">
+                            <option value="status">Sort: status</option>
+                            <option value="share">Sort: available share</option>
+                            <option value="online">Sort: online time</option>
+                            <option value="name">Sort: name</option>
+                        </select>
                     </div>
                     <div id="teamGrid" class="team-grid"></div>
                 </section>
 
                 <section class="card">
                     <div class="card-head">
-                        <div>
-                            <h3>Recent changes</h3>
-                            <p>The latest status changes picked up by the monitor.</p>
-                        </div>
-                        <button type="button" class="btn-link" data-goto="log">View full log →</button>
+                        <h3>Live feed</h3>
+                        <button type="button" class="btn-link" data-goto="log">All activity →</button>
                     </div>
                     <div id="recentFeed" class="feed"></div>
                 </section>
-            </section>
+            </div>
+        </section>
 
-            <!-- People -->
-            <section id="view-people" class="view">
-                <div class="people-layout">
-                    <section class="card">
-                        <div class="card-head"><h3>Tracked people</h3></div>
-                        <div id="trackedPeopleList" class="people-list"></div>
-                    </section>
-                    <section class="card" id="personDetail"></section>
+        <!-- People -->
+        <section id="view-people" class="view">
+            <div class="people-layout">
+                <section class="card">
+                    <div class="card-head"><h3>Tracked people</h3></div>
+                    <div id="trackedPeopleList" class="people-list"></div>
+                </section>
+                <section class="card" id="personDetail"></section>
+            </div>
+
+            <section class="card">
+                <div class="card-head">
+                    <div>
+                        <h3>Totals</h3>
+                        <p data-period-label>Today</p>
+                    </div>
+                    <button id="exportTotalsBtn" type="button" class="btn btn-sm">Export totals CSV</button>
                 </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Person</th><th>Now</th><th>Online</th><th>Available</th><th>Unavailable</th><th style="min-width: 170px;">Available share</th></tr>
+                        </thead>
+                        <tbody id="totalsBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+
+        <!-- Log -->
+        <section id="view-log" class="view">
+            <section class="card">
+                <div class="card-head">
+                    <div>
+                        <h3>Status changes</h3>
+                        <p id="logCount">0 entries</p>
+                    </div>
+                    <div class="row">
+                        <select id="logPerson" aria-label="Filter by person" style="width: auto;"></select>
+                        <button id="exportBtn" type="button" class="btn btn-sm">Export CSV</button>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>When</th><th>Person</th><th>Change</th><th>Activity</th></tr></thead>
+                        <tbody id="logBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+
+        <!-- Rules -->
+        <section id="view-rules" class="view">
+            <div class="rules">
+                <section class="card wide">
+                    <div class="card-head"><h3>The formulas</h3></div>
+                    <div class="formula">
+                        <div class="formula-item"><b>Online</b><code>monitored time while the status is anything except Offline or Unknown</code></div>
+                        <div class="formula-item"><b>Unavailable</b><code>online time where the status is not "Available", plus the Away adjustment</code></div>
+                        <div class="formula-item hl"><b>Available</b><code>Online − Unavailable</code></div>
+                        <div class="formula-item"><b>Available share</b><code>Available ÷ Online</code></div>
+                    </div>
+                </section>
 
                 <section class="card">
-                    <div class="card-head">
-                        <div>
-                            <h3>Time totals</h3>
-                            <p>Totals keep adding up across sessions until you reset them on the Activity log page.</p>
-                        </div>
-                    </div>
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Person</th>
-                                    <th>Status</th>
-                                    <th>Online</th>
-                                    <th>Available</th>
-                                    <th>Unavailable</th>
-                                    <th>Available share</th>
-                                </tr>
-                            </thead>
-                            <tbody id="totalsBody"></tbody>
+                    <div class="card-head"><h3>The rules</h3></div>
+                    <ol class="rule-list">
+                        <li><span><strong>Time only counts while the monitor is live.</strong> This page checks everyone's Teams status every <b id="ruleInterval">60 seconds</b>, in a single request. Keep the tab open — it can sit in the background. If it's closed, reloaded or stopped, nothing is counted until the monitor goes live again.</span></li>
+                        <li><span><strong>Each gap between checks takes the earlier status.</strong> If a check at 10:00 says Available and the next at 10:01 says Busy, that minute counts as Available. Totals can be out by up to one check interval per status change.</span></li>
+                        <li><span><strong>Long gaps are skipped.</strong> If more than <b id="ruleGap">3 minutes</b> passes between checks (computer asleep, network down), the gap isn't counted. The limit is 2× the check interval or 3 minutes, whichever is larger. Browsers slow background tabs to about one check a minute, which stays within this limit.</span></li>
+                        <li><span><strong>Offline isn't online.</strong> Time showing as Offline or Unknown is left out of every total.</span></li>
+                        <li><span><strong>Only "Available" counts as available.</strong> Every other online status — Busy, In a call, Do not disturb, Be right back, Away, Available (idle) — counts as unavailable.</span></li>
+                        <li><span><strong>The Away adjustment.</strong> Teams only marks someone Away after about 5 minutes of inactivity. When a person goes from Available straight to Away (or an idle/inactive status), the last 5 minutes of that Available stretch are re-labelled as unavailable. It never reaches back past the start of the stretch the monitor saw. On timelines this shows as a striped block.</span></li>
+                        <li><span><strong>Failed checks aren't guessed.</strong> If a check for someone fails, nothing is counted for them until their next successful check.</span></li>
+                        <li><span><strong>Periods.</strong> <em>Today</em> runs from midnight on this computer's clock. <em>Last 7 days</em> is today plus the previous 6 days. <em>All time</em> is everything kept. Time crossing midnight is split between the two days. History older than 180 days is deleted automatically.</span></li>
+                    </ol>
+                </section>
+
+                <section class="card">
+                    <div class="card-head"><h3>How each Teams status counts</h3></div>
+                    <div class="table-wrap" style="margin-top: 0;">
+                        <table style="min-width: 0;">
+                            <thead><tr><th>Teams status</th><th>Online?</th><th>Counts as</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="pill st-available"><i></i>Available</span></td><td>Yes</td><td>Available</td></tr>
+                                <tr><td><span class="pill st-away"><i></i>Available (idle)</span></td><td>Yes</td><td>Unavailable *</td></tr>
+                                <tr><td><span class="pill st-busy"><i></i>Busy / Busy (idle)</span></td><td>Yes</td><td>Unavailable</td></tr>
+                                <tr><td><span class="pill st-busy"><i></i>Do not disturb</span></td><td>Yes</td><td>Unavailable</td></tr>
+                                <tr><td><span class="pill st-away"><i></i>Be right back</span></td><td>Yes</td><td>Unavailable</td></tr>
+                                <tr><td><span class="pill st-away"><i></i>Away</span></td><td>Yes</td><td>Unavailable *</td></tr>
+                                <tr><td><span class="pill st-offline"><i></i>Offline / Unknown</span></td><td>No</td><td>Not counted</td></tr>
+                                <tr><td><span class="pill st-error"><i></i>Check failed</span></td><td>—</td><td>Not counted</td></tr>
+                            </tbody>
                         </table>
                     </div>
+                    <p class="muted small" style="margin: 34px 0 0;">* Moving into these from Available triggers the Away adjustment (rule 06).</p>
                 </section>
-            </section>
 
-            <!-- Log -->
-            <section id="view-log" class="view">
+                <section class="card wide">
+                    <div class="card-head"><h3>Worked example</h3></div>
+                    <div class="example">
+                        <p>The monitor goes live at 09:00 and Sam is <b>Available</b>. Sam steps away at 09:15; Teams marks Sam <b>Away</b> at about 09:20 and the next check sees it. Sam is <b>Available</b> again from 09:30. The monitor is stopped at 10:00.</p>
+                        <p><b>Online</b> 09:00–10:00 = <b>60 min</b> · <b>Unavailable</b> 09:20–09:30 (10 min) + 5-minute Away adjustment (09:15–09:20) = <b>15 min</b> · <b>Available</b> 60 − 15 = <b>45 min</b> (75%).</p>
+                        <div class="callout">If the page had been closed from 09:40 to 09:50, those 10 minutes would simply be missing — Online 50 min, Available 35 min — and on the timeline they'd show as an empty striped gap. Unmonitored time is never counted as Available.</div>
+                    </div>
+                </section>
+            </div>
+        </section>
+
+        <!-- Settings -->
+        <section id="view-settings" class="view">
+            <div class="settings-grid">
                 <section class="card">
-                    <div class="card-head">
-                        <div>
-                            <h3>Status change log</h3>
-                            <p id="logCount">0 entries</p>
+                    <div class="card-head"><h3>Account &amp; connection</h3></div>
+                    <div id="accountBox" class="account-box"></div>
+                    <div class="field-grid">
+                        <div class="field">
+                            <label for="tenantId">Tenant ID</label>
+                            <input id="tenantId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false" />
                         </div>
-                        <div class="header-actions">
-                            <button id="exportBtn" type="button" class="btn btn-sm">Export CSV</button>
-                            <button id="clearLogsBtn" type="button" class="btn btn-sm btn-danger">Reset totals &amp; log</button>
+                        <div class="field">
+                            <label for="clientId">Client ID</label>
+                            <input id="clientId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false" />
+                        </div>
+                        <div class="field">
+                            <label for="pollSeconds">Check every</label>
+                            <select id="pollSeconds">
+                                <option value="15">15 seconds</option>
+                                <option value="30">30 seconds</option>
+                                <option value="60" selected>60 seconds</option>
+                                <option value="120">2 minutes</option>
+                            </select>
+                            <span class="hint">Shorter is more accurate. Everyone is checked in one request.</span>
+                        </div>
+                        <div class="field">
+                            <label>Theme</label>
+                            <div class="segmented" id="themeSeg">
+                                <button type="button" data-theme-set="dark">Dark</button>
+                                <button type="button" data-theme-set="light">Light</button>
+                            </div>
                         </div>
                     </div>
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>When</th>
-                                    <th>Person</th>
-                                    <th>Change</th>
-                                    <th>Activity</th>
-                                </tr>
-                            </thead>
-                            <tbody id="logBody"></tbody>
-                        </table>
+                    <div class="row" style="margin-top: 18px;">
+                        <button id="saveConfigBtn" type="button" class="btn btn-solid">Save settings</button>
                     </div>
+                    <input id="userIds" type="hidden" />
                 </section>
-            </section>
-
-            <!-- Rules -->
-            <section id="view-rules" class="view">
-                <div class="rules">
-                    <section class="card wide">
-                        <div class="card-head"><h3>The short version</h3></div>
-                        <div class="formula">
-                            <div class="formula-row"><b>Online</b><code>time monitored while status is anything except Offline / Unknown</code></div>
-                            <div class="formula-row"><b>Unavailable</b><code>online time where status is not "Available" (+ the Away adjustment)</code></div>
-                            <div class="formula-row"><b>Available</b><code>Online − Unavailable</code></div>
-                            <div class="formula-row"><b>Available share</b><code>Available ÷ Online</code></div>
-                        </div>
-                    </section>
-
-                    <section class="card">
-                        <div class="card-head"><h3>The rules</h3></div>
-                        <ol class="rule-list">
-                            <li><span><strong>Time only counts while the monitor is running.</strong> The app checks each tracked person's Teams status every <b id="ruleInterval">60 seconds</b>. If this page is closed, reloaded, or you press Stop, nothing is counted until you press Start again.</span></li>
-                            <li><span><strong>Each gap between checks takes the earlier status.</strong> If a check at 10:00 says Available and the next at 10:01 says Busy, the minute from 10:00 to 10:01 counts as Available. Totals can therefore be out by up to one check interval per status change.</span></li>
-                            <li><span><strong>Long gaps are skipped.</strong> If more than <b id="ruleGap">3 minutes</b> passes between two checks (computer asleep, network down, browser paused the tab), that gap is not counted at all. This is the larger of 2× the check interval or 3 minutes.</span></li>
-                            <li><span><strong>Offline isn't online.</strong> Time when someone shows as Offline or Unknown is left out of every total.</span></li>
-                            <li><span><strong>Only "Available" counts as available.</strong> Every other online status — Busy, In a call, Do not disturb, Be right back, Away, Available (idle) — counts as unavailable.</span></li>
-                            <li><span><strong>The Away adjustment.</strong> Teams only switches someone to Away after about 5 minutes without activity. So when a person goes straight from Available to Away (or an idle/inactive status), the 5 minutes before are moved from Available to Unavailable. It never moves more than their latest unbroken Available stretch that the monitor saw.</span></li>
-                            <li><span><strong>Failed checks aren't guessed.</strong> If a check for someone fails, the time from that check until their next successful one isn't counted.</span></li>
-                            <li><span><strong>Totals are cumulative, not daily.</strong> They keep adding up across days and sessions until you use <em>Reset totals &amp; log</em>.</span></li>
-                        </ol>
-                    </section>
-
-                    <section class="card">
-                        <div class="card-head"><h3>How each Teams status is counted</h3></div>
-                        <div class="table-wrap" style="margin-top: 0;">
-                            <table style="min-width: 0;">
-                                <thead><tr><th>Teams status</th><th>Online?</th><th>Counts as</th></tr></thead>
-                                <tbody>
-                                    <tr><td><span class="pill st-available"><i></i>Available</span></td><td>Yes</td><td>Available</td></tr>
-                                    <tr><td><span class="pill st-away"><i></i>Available (idle)</span></td><td>Yes</td><td>Unavailable*</td></tr>
-                                    <tr><td><span class="pill st-busy"><i></i>Busy / Busy (idle)</span></td><td>Yes</td><td>Unavailable</td></tr>
-                                    <tr><td><span class="pill st-busy"><i></i>Do not disturb</span></td><td>Yes</td><td>Unavailable</td></tr>
-                                    <tr><td><span class="pill st-away"><i></i>Be right back</span></td><td>Yes</td><td>Unavailable</td></tr>
-                                    <tr><td><span class="pill st-away"><i></i>Away</span></td><td>Yes</td><td>Unavailable*</td></tr>
-                                    <tr><td><span class="pill st-offline"><i></i>Offline / Unknown</span></td><td>No</td><td>Not counted</td></tr>
-                                    <tr><td><span class="pill st-error"><i></i>Check failed</span></td><td>—</td><td>Not counted</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p class="muted small" style="margin: 30px 0 0;">* Moving into these from Available triggers the Away adjustment (rule 6).</p>
-                    </section>
-
-                    <section class="card wide">
-                        <div class="card-head"><h3>Worked example</h3></div>
-                        <div class="example">
-                            <p>The monitor is started at 09:00 and Sam is <b>Available</b>. Sam steps away at 09:15. Teams marks Sam <b>Away</b> at about 09:20, and the next check sees it. Sam comes back and is <b>Available</b> again from 09:30. The monitor is stopped at 10:00.</p>
-                            <p><b>Online:</b> 09:00–10:00 = <b>60 min</b>. &nbsp; <b>Unavailable:</b> 09:20–09:30 (10 min) + the 5-minute Away adjustment = <b>15 min</b>. &nbsp; <b>Available:</b> 60 − 15 = <b>45 min</b> (75%).</p>
-                            <div class="callout">If the page had been closed from 09:40 to 09:50, those 10 minutes would simply be missing: Online 50 min, Available 35 min. They are never counted as Available.</div>
-                        </div>
-                    </section>
-                </div>
-            </section>
-
-            <!-- Settings -->
-            <section id="view-settings" class="view">
-                <div class="settings-layout">
-                    <section class="card">
-                        <div class="card-head"><h3>Connection &amp; monitoring</h3></div>
-                        <div class="field-grid">
-                            <div class="field">
-                                <label for="tenantId">Tenant ID</label>
-                                <input id="tenantId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false" />
-                            </div>
-                            <div class="field">
-                                <label for="clientId">Client ID</label>
-                                <input id="clientId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false" />
-                            </div>
-                            <div class="field">
-                                <label for="pollSeconds">Check every</label>
-                                <select id="pollSeconds">
-                                    <option value="15">15 seconds</option>
-                                    <option value="30">30 seconds</option>
-                                    <option value="60" selected>60 seconds</option>
-                                    <option value="120">2 minutes</option>
-                                </select>
-                                <span class="hint">Shorter intervals are more accurate but make more requests.</span>
-                            </div>
-                            <div class="field">
-                                <label>Tracked people</label>
-                                <div id="selectedCount" class="code" style="padding: 10px 12px; border-radius: 10px; align-self: start;">0 selected</div>
-                            </div>
-                        </div>
-                        <div style="margin-top: 16px;">
-                            <button id="saveConfigBtn" type="button" class="btn btn-dark">Save settings</button>
-                        </div>
-                        <input id="userIds" type="hidden" />
-                    </section>
-
-                    <section class="card">
-                        <div class="card-head"><h3>One-time app setup</h3></div>
-                        <ol class="steps">
-                            <li>In the Microsoft Entra admin center, create an app registration.</li>
-                            <li>Add a <b>Single-page application</b> redirect URI: <span class="code" id="redirectHint"></span></li>
-                            <li>Add delegated Microsoft Graph permissions <span class="code">Presence.Read.All</span> and <span class="code">User.ReadBasic.All</span>, then grant admin consent.</li>
-                            <li>Copy the Tenant ID and Client ID into the fields here and save.</li>
-                        </ol>
-                    </section>
-                </div>
 
                 <section class="card">
-                    <div class="card-head">
-                        <div>
-                            <h3>Manage tracked people</h3>
-                            <p>Search your directory and tick people to track. Changes save automatically.</p>
-                        </div>
-                        <button id="clearSelectedUsersBtn" type="button" class="btn btn-sm btn-danger">Remove all</button>
-                    </div>
-                    <div class="search-row">
-                        <input id="userSearch" placeholder="Search by name or email…" />
-                        <button id="loadUsersBtn" type="button" class="btn btn-dark">Find people</button>
-                    </div>
-                    <div id="selectedUsers" class="chips"></div>
-                    <div id="userResults" class="user-grid"></div>
+                    <div class="card-head"><h3>One-time app setup</h3></div>
+                    <ol class="steps">
+                        <li>In the Microsoft Entra admin center, create an app registration.</li>
+                        <li>Add a <b>Single-page application</b> redirect URI: <span class="code" id="redirectHint"></span></li>
+                        <li>Add delegated Microsoft Graph permissions <span class="code">Presence.Read.All</span> and <span class="code">User.ReadBasic.All</span>, then grant admin consent.</li>
+                        <li>Paste the Tenant ID and Client ID here and save.</li>
+                    </ol>
                 </section>
-            </section>
-        </main>
-    </div>
+            </div>
 
+            <section class="card" id="peopleManager">
+                <div class="card-head">
+                    <div>
+                        <h3>Tracked people <span id="selectedCount" class="pill" style="margin-left: 6px; vertical-align: middle;">0</span></h3>
+                        <p>Search your directory and tick people to track. Changes save instantly.</p>
+                    </div>
+                    <button id="clearSelectedUsersBtn" type="button" class="btn btn-sm btn-danger">Remove all</button>
+                </div>
+                <div class="search-row">
+                    <input id="userSearch" placeholder="Search by name or email…" />
+                    <button id="loadUsersBtn" type="button" class="btn btn-solid">Find people</button>
+                </div>
+                <div id="selectedUsers" class="chips"></div>
+                <div id="userResults" class="user-grid"></div>
+            </section>
+
+            <section class="card">
+                <div class="card-head">
+                    <div>
+                        <h3>Data</h3>
+                        <p>Everything is stored only in this browser. Nothing is sent anywhere except to Microsoft.</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <button type="button" class="btn" data-action="export-totals">Export totals CSV</button>
+                    <button type="button" class="btn" data-action="export-log">Export activity CSV</button>
+                    <button id="clearLogsBtn" type="button" class="btn btn-danger">Reset all totals &amp; history</button>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <div id="tooltip" class="tooltip"></div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script>
-        const STORAGE_KEY = "teamsPresenceMonitorConfig";
+        const CONFIG_KEY = "teamsPresenceMonitorConfig";
         const LOG_KEY = "teamsPresenceLogs";
-        const STATE_KEY = "teamsPresenceMonitorState.v2";
+        const STATE_KEY = "presence.state.v3";
+        const LEGACY_STATE_KEY = "teamsPresenceMonitorState.v2";
+        const THEME_KEY = "presence.theme";
         const AWAY_OFFSET_MS = 5 * 60 * 1000;
         const MIN_GAP_LIMIT_MS = 3 * 60 * 1000;
+        const DAY_MS = 24 * 60 * 60 * 1000;
+        const KEEP_MS = 180 * DAY_MS;
+        const MAX_LOGS = 5000;
+        const RING_C = 2 * Math.PI * 23;
         const GRAPH_SCOPES = ["User.Read", "User.ReadBasic.All", "Presence.Read", "Presence.Read.All"];
+        const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
         const appState = {
             msalInstance: null,
@@ -903,133 +1217,103 @@
             tickId: null,
             polling: false,
             runningPollMs: null,
+            sessionStartedAt: null,
             lastPollAt: null,
+            batchSupported: true,
             logs: [],
             directoryUsers: [],
             selectedUsers: new Map(),
             records: new Map(),
             activeView: "dashboard",
-            selectedDetailUserId: null
+            selectedDetailUserId: null,
+            period: "today",
+            dayOffset: 0,
+            filter: "all",
+            query: "",
+            sort: "status",
+            logPerson: ""
         };
 
         const $ = (id) => document.getElementById(id);
         const ui = {
             navButtons: Array.from(document.querySelectorAll(".nav-btn")),
             views: {
-                dashboard: $("view-dashboard"),
-                people: $("view-people"),
-                log: $("view-log"),
-                rules: $("view-rules"),
-                settings: $("view-settings")
+                dashboard: $("view-dashboard"), people: $("view-people"), log: $("view-log"),
+                rules: $("view-rules"), settings: $("view-settings")
             },
-            viewTitle: $("viewTitle"),
-            viewSubtitle: $("viewSubtitle"),
-            monitorPill: $("monitorPill"),
-            signInBtn: $("signInBtn"),
-            signOutBtn: $("signOutBtn"),
-            monitorBtn: $("monitorBtn"),
-            errorBanner: $("errorBanner"),
-            errorText: $("errorText"),
-            toast: $("toast"),
-            footAccount: $("footAccount"),
-            footAccountDot: $("footAccountDot"),
-            footMonitor: $("footMonitor"),
-            footMonitorDot: $("footMonitorDot"),
-            kpiTracked: $("kpiTracked"),
-            kpiAvailable: $("kpiAvailable"),
-            kpiUnavailable: $("kpiUnavailable"),
-            kpiOffline: $("kpiOffline"),
-            teamGrid: $("teamGrid"),
-            recentFeed: $("recentFeed"),
-            trackedPeopleList: $("trackedPeopleList"),
-            personDetail: $("personDetail"),
-            totalsBody: $("totalsBody"),
-            logBody: $("logBody"),
-            logCount: $("logCount"),
-            exportBtn: $("exportBtn"),
-            clearLogsBtn: $("clearLogsBtn"),
-            ruleInterval: $("ruleInterval"),
-            ruleGap: $("ruleGap"),
-            tenantId: $("tenantId"),
-            clientId: $("clientId"),
-            pollSeconds: $("pollSeconds"),
-            selectedCount: $("selectedCount"),
-            saveConfigBtn: $("saveConfigBtn"),
-            userIds: $("userIds"),
-            redirectHint: $("redirectHint"),
-            userSearch: $("userSearch"),
-            loadUsersBtn: $("loadUsersBtn"),
-            clearSelectedUsersBtn: $("clearSelectedUsersBtn"),
-            selectedUsers: $("selectedUsers"),
-            userResults: $("userResults")
+            viewTitle: $("viewTitle"), viewSubtitle: $("viewSubtitle"), periodControl: $("periodControl"),
+            themeBtn: $("themeBtn"), accountChip: $("accountChip"), signInBtn: $("signInBtn"), monitorBtn: $("monitorBtn"),
+            errorBanner: $("errorBanner"), errorText: $("errorText"), toast: $("toast"), tooltip: $("tooltip"),
+            setupArea: $("setupArea"), nowAvailable: $("nowAvailable"), nowTotal: $("nowTotal"),
+            compoBar: $("compoBar"), compoLegend: $("compoLegend"), teamTimeline: $("teamTimeline"),
+            statusFilter: $("statusFilter"), peopleSearch: $("peopleSearch"), sortSelect: $("sortSelect"),
+            teamGrid: $("teamGrid"), recentFeed: $("recentFeed"),
+            trackedPeopleList: $("trackedPeopleList"), personDetail: $("personDetail"), totalsBody: $("totalsBody"),
+            logBody: $("logBody"), logCount: $("logCount"), logPerson: $("logPerson"),
+            ruleInterval: $("ruleInterval"), ruleGap: $("ruleGap"),
+            accountBox: $("accountBox"), tenantId: $("tenantId"), clientId: $("clientId"), pollSeconds: $("pollSeconds"),
+            saveConfigBtn: $("saveConfigBtn"), userIds: $("userIds"), redirectHint: $("redirectHint"),
+            selectedCount: $("selectedCount"), userSearch: $("userSearch"), loadUsersBtn: $("loadUsersBtn"),
+            clearSelectedUsersBtn: $("clearSelectedUsersBtn"), selectedUsers: $("selectedUsers"), userResults: $("userResults"),
+            clearLogsBtn: $("clearLogsBtn")
         };
 
         const VIEW_META = {
-            dashboard: { title: "Dashboard", subtitle: "Who's available right now, and how their monitored time splits." },
-            people: { title: "People", subtitle: "Individual totals and recent status changes." },
-            log: { title: "Activity log", subtitle: "Every status change the monitor has seen." },
-            rules: { title: "How it's calculated", subtitle: "Exactly how Online, Available and Unavailable time are worked out." },
-            settings: { title: "Settings", subtitle: "App connection, check interval and who is tracked." }
+            dashboard: { title: "Dashboard", subtitle: "Who's available now, and how everyone's day is going.", period: true },
+            people: { title: "People", subtitle: "One person at a time: totals, their week and their day.", period: true },
+            log: { title: "Activity", subtitle: "Every status change the monitor has picked up.", period: false },
+            rules: { title: "How it's calculated", subtitle: "Exactly how Online, Available and Unavailable are worked out.", period: false },
+            settings: { title: "Settings", subtitle: "Connection, check interval, tracked people and your data.", period: false }
         };
+
+        const PERIOD_LABELS = { today: "Today", "7d": "Last 7 days", all: "All time" };
 
         ui.redirectHint.textContent = window.location.origin + window.location.pathname;
 
-        /* ---------- Storage ---------- */
-        function storeGet(key) {
-            try { return localStorage.getItem(key); } catch { return null; }
-        }
+        /* =========================================================
+           Helpers
+           ========================================================= */
+        function storeGet(key) { try { return localStorage.getItem(key); } catch { return null; } }
+        function storeSet(key, value) { try { localStorage.setItem(key, value); } catch { /* full or blocked */ } }
 
-        function storeSet(key, value) {
-            try { localStorage.setItem(key, value); } catch { /* storage unavailable */ }
-        }
-
-        /* ---------- Messages ---------- */
         let toastTimer = null;
         function toast(message) {
             ui.toast.textContent = message;
             ui.toast.classList.add("show");
             clearTimeout(toastTimer);
-            toastTimer = setTimeout(() => ui.toast.classList.remove("show"), 3200);
+            toastTimer = setTimeout(() => ui.toast.classList.remove("show"), 3000);
         }
 
         function setError(message) {
-            ui.errorText.textContent = message || "";
+            ui.errorText.innerHTML = message ? `<b>Problem:</b> ${escapeHtml(message)}` : "";
             ui.errorBanner.classList.toggle("hidden", !message);
             if (message) console.error(message);
         }
 
-        function errorText(error) {
-            return String(error && error.message ? error.message : error);
-        }
+        function errorText(error) { return String(error && error.message ? error.message : error); }
 
-        /* ---------- Helpers ---------- */
         function escapeHtml(value) {
             return String(value ?? "")
-                .replaceAll("&", "&amp;")
-                .replaceAll("<", "&lt;")
-                .replaceAll(">", "&gt;")
-                .replaceAll('"', "&quot;")
-                .replaceAll("'", "&#39;");
+                .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;").replaceAll("'", "&#39;");
         }
 
-        function userLabel(user) {
-            return user.displayName || user.userPrincipalName || user.mail || user.id;
-        }
-
-        function lower(value) {
-            return String(value || "").toLowerCase();
-        }
+        function userLabel(user) { return user.displayName || user.userPrincipalName || user.mail || user.id; }
+        function lower(value) { return String(value || "").toLowerCase(); }
 
         function isAvailableStatus(av) { return lower(av) === "available"; }
         function isErrorStatus(av) { return lower(av) === "error"; }
-        function isOfflineStatus(av) {
-            const a = lower(av);
-            return a === "" || a === "offline" || a === "presenceunknown";
-        }
+        function isOfflineStatus(av) { const a = lower(av); return a === "" || a === "offline" || a === "presenceunknown"; }
         function isCountedStatus(av) { return !isOfflineStatus(av) && !isErrorStatus(av); }
         function isInactivityDrivenStatus(av, act) {
             const a = lower(av);
             return a === "away" || a.includes("idle") || lower(act) === "inactive";
+        }
+
+        function statusGroup(av) {
+            if (isAvailableStatus(av)) return "available";
+            if (av && isCountedStatus(av)) return "unavailable";
+            return "offline";
         }
 
         function statusClass(av) {
@@ -1042,20 +1326,13 @@
         }
 
         const STATUS_LABELS = {
-            available: "Available",
-            availableidle: "Available (idle)",
-            away: "Away",
-            berightback: "Be right back",
-            busy: "Busy",
-            busyidle: "Busy (idle)",
-            donotdisturb: "Do not disturb",
-            offline: "Offline",
-            presenceunknown: "Unknown",
-            error: "Check failed"
+            available: "Available", availableidle: "Available (idle)", away: "Away", berightback: "Be right back",
+            busy: "Busy", busyidle: "Busy (idle)", donotdisturb: "Do not disturb", offline: "Offline",
+            presenceunknown: "Unknown", error: "Check failed"
         };
 
         function prettyStatus(av) {
-            if (!av) return "Not checked yet";
+            if (!av) return "Not checked";
             return STATUS_LABELS[lower(av)] || String(av).replace(/([a-z])([A-Z])/g, "$1 $2");
         }
 
@@ -1082,28 +1359,33 @@
             return (clean.slice(0, 2) || "?").toUpperCase();
         }
 
-        function avatar(id, name, av, extraClass = "") {
+        function avatar(id, name, av) {
             const dot = av === undefined ? "" : `<i class="dot ${statusClass(av)}"></i>`;
-            return `<span class="avatar ${extraClass}" style="--h:${hueFor(id)}">${escapeHtml(initials(name))}${dot}</span>`;
+            return `<span class="avatar" style="--h:${hueFor(id)}">${escapeHtml(initials(name))}${dot}</span>`;
         }
 
         function fmt(ms) {
             const total = Math.max(0, Math.floor(ms / 1000));
-            const h = Math.floor(total / 3600);
-            const m = Math.floor((total % 3600) / 60);
-            const s = total % 60;
+            const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
             if (h > 0) return `${h}h ${String(m).padStart(2, "0")}m`;
             if (m > 0) return `${m}m ${String(s).padStart(2, "0")}s`;
             return `${s}s`;
         }
 
+        function fmtShort(ms) {
+            const mins = Math.round(ms / 60000);
+            if (mins < 60) return `${mins}m`;
+            const h = Math.floor(mins / 60), m = mins % 60;
+            return m ? `${h}h ${m}m` : `${h}h`;
+        }
+
         function fmtClock(ms) {
             const total = Math.max(0, Math.floor(ms / 1000));
-            const h = Math.floor(total / 3600);
-            const m = Math.floor((total % 3600) / 60);
-            const s = total % 60;
-            return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
+            return [Math.floor(total / 3600), Math.floor((total % 3600) / 60), total % 60]
+                .map((v) => String(v).padStart(2, "0")).join(":");
         }
+
+        function hhmm(ms) { return new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
 
         function timeAgo(ms) {
             if (!ms) return "never";
@@ -1111,46 +1393,46 @@
             if (diff < 10000) return "just now";
             if (diff < 60000) return `${Math.floor(diff / 1000)}s ago`;
             if (diff < 3600000) return `${Math.floor(diff / 60000)} min ago`;
-            if (diff < 86400000) return `${Math.floor(diff / 3600000)} h ago`;
+            if (diff < DAY_MS) return `${Math.floor(diff / 3600000)} h ago`;
             return new Date(ms).toLocaleDateString();
         }
 
-        function fmtDateTime(ms) {
+        function fmtWhen(ms) {
             const d = new Date(ms);
-            const sameDay = d.toDateString() === new Date().toDateString();
-            const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-            return sameDay ? time : `${d.toLocaleDateString()} ${time}`;
+            const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            if (d.toDateString() === new Date().toDateString()) return time;
+            return `${d.toLocaleDateString([], { day: "numeric", month: "short" })} ${time}`;
         }
 
-        /* ---------- Time accounting ----------
-           Each record keeps finished totals (onlineMs, unavailableMs) plus
-           openSince: the time of the last successful check while the monitor
-           is running. When the next check arrives, the interval since then is
-           credited to the status seen at that earlier check. Stopping, closing
-           the page, errors and long gaps close the interval without crediting
-           anything beyond what was actually observed. */
-
-        function pollIntervalMs() {
-            return appState.runningPollMs || Number(ui.pollSeconds.value) * 1000;
+        function startOfDay(ms, offsetDays = 0) {
+            const d = new Date(ms);
+            d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() - offsetDays);
+            return d.getTime();
         }
 
-        function gapLimitMs() {
-            return Math.max(2 * pollIntervalMs(), MIN_GAP_LIMIT_MS);
+        function dayLabel(offset) {
+            if (offset === 0) return "Today";
+            if (offset === 1) return "Yesterday";
+            return new Date(startOfDay(Date.now(), offset)).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
         }
+
+        /* =========================================================
+           Time accounting
+           ---------------------------------------------------------
+           Each person has a list of status segments {s, e, st, adj}.
+           A segment is only written for time between two successful
+           checks while the monitor is live, so unmonitored, offline
+           and failed time never appear. Every total and timeline is
+           worked out from these segments.
+           ========================================================= */
+        function pollIntervalMs() { return appState.runningPollMs || Number(ui.pollSeconds.value) * 1000; }
+        function gapLimitMs() { return Math.max(2 * pollIntervalMs(), MIN_GAP_LIMIT_MS); }
 
         function newRecord(user) {
             return {
-                userId: user.id,
-                userLabel: userLabel(user),
-                availability: null,
-                activity: null,
-                checkedAt: null,
-                firstSeenAt: null,
-                onlineMs: 0,
-                unavailableMs: 0,
-                awayAdjustMs: 0,
-                availableStreakMs: 0,
-                openSince: null
+                userId: user.id, userLabel: userLabel(user), availability: null, activity: null,
+                checkedAt: null, firstSeenAt: null, segments: [], openSince: null
             };
         }
 
@@ -1163,51 +1445,117 @@
             return rec;
         }
 
+        function appendSegment(rec, s, e, st, adj = false) {
+            const last = rec.segments[rec.segments.length - 1];
+            if (last && last.e === s && last.st === st && Boolean(last.adj) === adj) {
+                last.e = e;
+            } else {
+                const seg = { s, e, st };
+                if (adj) seg.adj = true;
+                rec.segments.push(seg);
+            }
+        }
+
         // Credit the time since the last check to the status seen at that check.
         function closeInterval(rec, untilMs, keepOpen) {
             if (rec.openSince) {
                 const elapsed = untilMs - rec.openSince;
-                if (elapsed > 0 && elapsed <= gapLimitMs()) {
-                    if (isCountedStatus(rec.availability)) {
-                        rec.onlineMs += elapsed;
-                        if (isAvailableStatus(rec.availability)) {
-                            rec.availableStreakMs += elapsed;
-                        } else {
-                            rec.unavailableMs += elapsed;
-                        }
-                    }
-                } else if (elapsed > gapLimitMs()) {
-                    rec.availableStreakMs = 0;
+                if (elapsed > 0 && elapsed <= gapLimitMs() && isCountedStatus(rec.availability)) {
+                    appendSegment(rec, rec.openSince, untilMs, rec.availability);
                 }
             }
-
             rec.openSince = keepOpen ? untilMs : null;
-            if (!keepOpen) {
-                rec.availableStreakMs = 0;
-            }
         }
 
         function closeAllIntervals(untilMs) {
-            for (const rec of appState.records.values()) {
-                closeInterval(rec, untilMs, false);
-            }
+            for (const rec of appState.records.values()) closeInterval(rec, untilMs, false);
         }
 
-        // Time since the last check that hasn't been credited yet (for live display).
-        function pendingMs(rec, nowMs) {
-            if (!appState.timerId || !rec.openSince || !isCountedStatus(rec.availability)) return 0;
+        // Re-label the last few minutes of an unbroken Available stretch ending at `atMs`.
+        function applyAwayAdjustment(rec, atMs) {
+            const segs = rec.segments;
+            let remaining = AWAY_OFFSET_MS;
+            let cursor = atMs;
+            let applied = 0;
+            let i = segs.length - 1;
+            while (remaining > 0 && i >= 0) {
+                const seg = segs[i];
+                if (seg.e !== cursor || !isAvailableStatus(seg.st) || seg.adj) break;
+                const take = Math.min(remaining, seg.e - seg.s);
+                const splitAt = seg.e - take;
+                const adjSeg = { s: splitAt, e: seg.e, st: "Away", adj: true };
+                if (splitAt === seg.s) {
+                    segs.splice(i, 1, adjSeg);
+                } else {
+                    seg.e = splitAt;
+                    segs.splice(i + 1, 0, adjSeg);
+                }
+                remaining -= take;
+                applied += take;
+                cursor = splitAt;
+                i -= 1;
+            }
+            for (let j = segs.length - 1; j > 0; j -= 1) {
+                const a = segs[j - 1], b = segs[j];
+                if (a.adj && b.adj && a.e === b.s) {
+                    a.e = b.e;
+                    segs.splice(j, 1);
+                }
+            }
+            return applied;
+        }
+
+        function pendingSegment(rec, nowMs) {
+            if (!appState.timerId || !rec.openSince || !isCountedStatus(rec.availability)) return null;
             const elapsed = nowMs - rec.openSince;
-            return elapsed > 0 && elapsed <= gapLimitMs() ? elapsed : 0;
+            if (elapsed <= 0 || elapsed > gapLimitMs()) return null;
+            return { s: rec.openSince, e: nowMs, st: rec.availability, live: true };
+        }
+
+        function segmentsFor(rec, nowMs) {
+            const pending = pendingSegment(rec, nowMs);
+            return pending ? rec.segments.concat([pending]) : rec.segments;
+        }
+
+        function totalsBetween(userId, from, to, nowMs = Date.now()) {
+            const t = { online: 0, available: 0, unavailable: 0, adjusted: 0, pct: 0 };
+            const rec = appState.records.get(userId);
+            if (rec) {
+                for (const seg of segmentsFor(rec, nowMs)) {
+                    const s = Math.max(seg.s, from), e = Math.min(seg.e, to);
+                    if (e <= s) continue;
+                    const d = e - s;
+                    t.online += d;
+                    if (isAvailableStatus(seg.st) && !seg.adj) {
+                        t.available += d;
+                    } else {
+                        t.unavailable += d;
+                        if (seg.adj) t.adjusted += d;
+                    }
+                }
+            }
+            t.pct = t.online ? (t.available / t.online) * 100 : 0;
+            return t;
+        }
+
+        function periodRange(nowMs = Date.now()) {
+            if (appState.period === "today") return { from: startOfDay(nowMs), to: nowMs };
+            if (appState.period === "7d") return { from: startOfDay(nowMs, 6), to: nowMs };
+            return { from: 0, to: nowMs };
         }
 
         function timesFor(userId, nowMs = Date.now()) {
-            const rec = appState.records.get(userId);
-            if (!rec) return { online: 0, unavailable: 0, available: 0, pct: 0 };
-            const pending = pendingMs(rec, nowMs);
-            const online = rec.onlineMs + pending;
-            const unavailable = Math.min(online, rec.unavailableMs + (isAvailableStatus(rec.availability) ? 0 : pending));
-            const available = Math.max(0, online - unavailable);
-            return { online, unavailable, available, pct: online > 0 ? (available / online) * 100 : 0 };
+            const r = periodRange(nowMs);
+            if (userId === "__team") {
+                const t = { online: 0, available: 0, unavailable: 0, adjusted: 0, pct: 0 };
+                for (const user of getMonitoredUsers()) {
+                    const u = totalsBetween(user.id, r.from, r.to, nowMs);
+                    t.online += u.online; t.available += u.available; t.unavailable += u.unavailable; t.adjusted += u.adjusted;
+                }
+                t.pct = t.online ? (t.available / t.online) * 100 : 0;
+                return t;
+            }
+            return totalsBetween(userId, r.from, r.to, nowMs);
         }
 
         function applyPresence(user, presence, nowMs) {
@@ -1220,25 +1568,13 @@
 
             if (prevAv && !isErrorStatus(prevAv) && prevAv !== newAv) {
                 appState.logs.push({
-                    timestamp: new Date(nowMs).toISOString(),
-                    userId: user.id,
-                    userLabel: userLabel(user),
-                    fromAvailability: prevAv,
-                    toAvailability: newAv,
-                    activity: newAct
+                    timestamp: new Date(nowMs).toISOString(), userId: user.id, userLabel: userLabel(user),
+                    fromAvailability: prevAv, toAvailability: newAv, activity: newAct
                 });
             }
 
-            if (isAvailableStatus(prevAv) && !isAvailableStatus(newAv) &&
-                isCountedStatus(newAv) && isInactivityDrivenStatus(newAv, newAct) &&
-                rec.availableStreakMs > 0) {
-                const shift = Math.min(AWAY_OFFSET_MS, rec.availableStreakMs);
-                rec.unavailableMs += shift;
-                rec.awayAdjustMs += shift;
-            }
-
-            if (!isAvailableStatus(newAv)) {
-                rec.availableStreakMs = 0;
+            if (isAvailableStatus(prevAv) && !isAvailableStatus(newAv) && isCountedStatus(newAv) && isInactivityDrivenStatus(newAv, newAct)) {
+                applyAwayAdjustment(rec, nowMs);
             }
 
             rec.userLabel = userLabel(user);
@@ -1257,9 +1593,11 @@
             rec.checkedAt = nowMs;
         }
 
-        /* ---------- Persistence ---------- */
+        /* =========================================================
+           Persistence
+           ========================================================= */
         function loadConfig() {
-            const raw = storeGet(STORAGE_KEY);
+            const raw = storeGet(CONFIG_KEY);
             if (!raw) return;
             try {
                 const parsed = JSON.parse(raw);
@@ -1267,23 +1605,29 @@
                 ui.clientId.value = parsed.clientId || "";
                 ui.userIds.value = parsed.userIds || "";
                 appState.selectedUsers = new Map();
-                (parsed.selectedUsers || []).forEach((user) => {
-                    if (user && user.id) appState.selectedUsers.set(user.id, user);
-                });
+                (parsed.selectedUsers || []).forEach((u) => { if (u && u.id) appState.selectedUsers.set(u.id, u); });
                 ui.pollSeconds.value = String(parsed.pollSeconds || 60);
+                if (parsed.period && PERIOD_LABELS[parsed.period]) appState.period = parsed.period;
             } catch {
                 setError("Saved settings couldn't be read. Please re-enter them.");
             }
         }
 
+        function hasSavedConnection() {
+            try {
+                const parsed = JSON.parse(storeGet(CONFIG_KEY) || "{}");
+                return Boolean(parsed.tenantId && parsed.clientId);
+            } catch { return false; }
+        }
+
         function saveConfig() {
-            const selectedUsers = Array.from(appState.selectedUsers.values());
-            storeSet(STORAGE_KEY, JSON.stringify({
+            storeSet(CONFIG_KEY, JSON.stringify({
                 tenantId: ui.tenantId.value.trim(),
                 clientId: ui.clientId.value.trim(),
                 userIds: ui.userIds.value.trim(),
-                selectedUsers,
-                pollSeconds: Number(ui.pollSeconds.value)
+                selectedUsers: Array.from(appState.selectedUsers.values()),
+                pollSeconds: Number(ui.pollSeconds.value),
+                period: appState.period
             }));
         }
 
@@ -1291,186 +1635,359 @@
             try {
                 const parsed = JSON.parse(storeGet(LOG_KEY) || "[]");
                 appState.logs = Array.isArray(parsed) ? parsed : [];
-            } catch {
-                appState.logs = [];
-            }
+            } catch { appState.logs = []; }
         }
 
         function saveLogs() {
+            if (appState.logs.length > MAX_LOGS) appState.logs = appState.logs.slice(-MAX_LOGS);
             storeSet(LOG_KEY, JSON.stringify(appState.logs));
         }
 
         function saveMonitorState() {
-            storeSet(STATE_KEY, JSON.stringify({
-                records: Array.from(appState.records.values()),
-                savedAt: Date.now()
-            }));
+            const cutoff = Date.now() - KEEP_MS;
+            for (const rec of appState.records.values()) {
+                if (rec.segments.length && rec.segments[0].e < cutoff) {
+                    rec.segments = rec.segments.filter((s) => s.e >= cutoff);
+                }
+            }
+            storeSet(STATE_KEY, JSON.stringify({ version: 3, records: Array.from(appState.records.values()), savedAt: Date.now() }));
         }
 
         function loadMonitorState() {
-            const raw = storeGet(STATE_KEY);
+            let raw = storeGet(STATE_KEY);
+            let legacy = false;
+            if (!raw) {
+                raw = storeGet(LEGACY_STATE_KEY);
+                legacy = Boolean(raw);
+            }
             if (!raw) return;
             try {
                 const parsed = JSON.parse(raw);
                 appState.records = new Map();
-                (parsed.records || []).forEach((rec) => {
-                    if (!rec || !rec.userId) return;
-                    appState.records.set(rec.userId, {
-                        ...newRecord({ id: rec.userId }),
-                        ...rec,
-                        onlineMs: Number(rec.onlineMs) || 0,
-                        unavailableMs: Number(rec.unavailableMs) || 0,
-                        awayAdjustMs: Number(rec.awayAdjustMs) || 0,
-                        // The monitor never survives a reload, so nothing is open.
-                        openSince: null,
-                        availableStreakMs: 0
+                (parsed.records || []).forEach((r) => {
+                    if (!r || !r.userId) return;
+                    appState.records.set(r.userId, {
+                        ...newRecord({ id: r.userId }),
+                        userLabel: r.userLabel || r.userId,
+                        availability: r.availability || null,
+                        activity: r.activity || null,
+                        checkedAt: r.checkedAt || null,
+                        firstSeenAt: r.firstSeenAt || null,
+                        // Older versions stored totals only, which can't be split by day.
+                        segments: legacy || !Array.isArray(r.segments) ? [] : r.segments.filter((s) => s && s.e > s.s),
+                        openSince: null // the monitor never survives a reload
                     });
                 });
             } catch {
-                setError("Saved totals couldn't be read, so they start from zero.");
+                setError("Saved history couldn't be read, so totals start from zero.");
             }
         }
 
-        /* ---------- Views ---------- */
-        function setActiveView(view) {
-            if (!ui.views[view]) return;
-            appState.activeView = view;
-            Object.entries(ui.views).forEach(([key, el]) => el.classList.toggle("active", key === view));
-            ui.navButtons.forEach((b) => b.classList.toggle("active", b.dataset.view === view));
-            ui.viewTitle.textContent = VIEW_META[view].title;
-            ui.viewSubtitle.textContent = VIEW_META[view].subtitle;
-            window.scrollTo({ top: 0 });
-        }
-
+        /* =========================================================
+           Users & filtering
+           ========================================================= */
         function getMonitoredUsers() {
             const selected = Array.from(appState.selectedUsers.values());
             if (selected.length > 0) return selected;
-            return ui.userIds.value
-                .split(",")
-                .map((v) => v.trim())
-                .filter(Boolean)
-                .map((id) => ({ id, displayName: id }));
+            return ui.userIds.value.split(",").map((v) => v.trim()).filter(Boolean).map((id) => ({ id, displayName: id }));
         }
 
+        function currentAv(userId) {
+            const rec = appState.records.get(userId);
+            return rec ? rec.availability : null;
+        }
+
+        function sortUsers(users, nowMs) {
+            const order = { available: 0, unavailable: 1, offline: 2 };
+            const byName = (a, b) => userLabel(a).localeCompare(userLabel(b));
+            const list = users.slice();
+            if (appState.sort === "name") return list.sort(byName);
+            if (appState.sort === "share") return list.sort((a, b) => timesFor(b.id, nowMs).pct - timesFor(a.id, nowMs).pct || byName(a, b));
+            if (appState.sort === "online") return list.sort((a, b) => timesFor(b.id, nowMs).online - timesFor(a.id, nowMs).online || byName(a, b));
+            return list.sort((a, b) => order[statusGroup(currentAv(a.id))] - order[statusGroup(currentAv(b.id))] || byName(a, b));
+        }
+
+        function visibleUsers(nowMs = Date.now()) {
+            const q = lower(appState.query).trim();
+            const users = getMonitoredUsers().filter((u) => {
+                if (appState.filter !== "all" && statusGroup(currentAv(u.id)) !== appState.filter) return false;
+                if (q && !lower(`${userLabel(u)} ${u.mail || ""} ${u.userPrincipalName || ""}`).includes(q)) return false;
+                return true;
+            });
+            return sortUsers(users, nowMs);
+        }
+
+        /* =========================================================
+           Rendering
+           ========================================================= */
         function liveValue(kind, userId, value) {
             return `<span data-live="${kind}" data-uid="${escapeHtml(userId)}">${value}</span>`;
         }
 
-        function shareBar(userId, t) {
-            return `<div class="share ${t.online ? "" : "empty"}" data-live-share data-uid="${escapeHtml(userId)}"><div class="share-fill" data-live="bar" data-uid="${escapeHtml(userId)}" style="width:${t.pct.toFixed(1)}%"></div></div>`;
+        function pctText(t) { return t.online ? `${Math.round(t.pct)}%` : "—"; }
+
+        function ring(userId, t, large = false) {
+            const dash = t.online ? (t.pct / 100) * RING_C : 0;
+            const label = large ? `<div><div>${liveValue("pct", userId, pctText(t))}</div><small>AVAILABLE</small></div>` : liveValue("pct", userId, pctText(t));
+            return `
+                <div class="ring-wrap${large ? " lg" : ""}">
+                    <svg class="ring" viewBox="0 0 56 56" aria-hidden="true">
+                        <circle cx="28" cy="28" r="23" class="ring-track"/>
+                        <circle cx="28" cy="28" r="23" class="ring-fill" data-live="ring" data-uid="${escapeHtml(userId)}" stroke-dasharray="${dash.toFixed(2)} ${RING_C.toFixed(2)}" transform="rotate(-90 28 28)"/>
+                    </svg>
+                    <div class="ring-label">${label}</div>
+                </div>`;
         }
 
-        function pctText(t) {
-            return t.online ? `${Math.round(t.pct)}%` : "—";
+        function bar(userId, t) {
+            return `<div class="bar ${t.online ? "" : "empty"}"><div class="bar-fill" data-live="bar" data-uid="${escapeHtml(userId)}" style="width:${t.pct.toFixed(1)}%"></div></div>`;
         }
 
-        function renderHeader() {
+        function renderTopbar() {
             const running = Boolean(appState.timerId);
             const signedIn = Boolean(appState.account);
+            const theme = document.documentElement.dataset.theme;
+
+            ui.themeBtn.innerHTML = theme === "dark"
+                ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`
+                : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>`;
+            document.querySelectorAll("[data-theme-set]").forEach((b) => b.classList.toggle("active", b.dataset.themeSet === theme));
 
             ui.signInBtn.classList.toggle("hidden", signedIn);
-            ui.signOutBtn.classList.toggle("hidden", !signedIn);
-
-            ui.monitorBtn.className = running ? "btn btn-danger" : "btn btn-primary";
-            ui.monitorBtn.innerHTML = running
-                ? `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg><span>Stop monitoring</span>`
-                : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span>Start monitoring</span>`;
-
-            ui.footAccount.textContent = signedIn ? appState.account.username : "Not signed in";
-            ui.footAccountDot.className = signedIn ? "foot-dot on" : "foot-dot";
-            ui.footMonitorDot.className = running ? "foot-dot live" : "foot-dot";
-            updateMonitorPill();
-        }
-
-        function updateMonitorPill() {
-            const running = Boolean(appState.timerId);
-            const secs = Math.round(pollIntervalMs() / 1000);
-            ui.monitorPill.classList.toggle("live", running);
-            ui.monitorPill.innerHTML = running
-                ? `<i class="foot-dot live"></i>Monitoring every ${secs}s · checked ${escapeHtml(timeAgo(appState.lastPollAt))}`
-                : `<i class="foot-dot"></i>Monitor stopped`;
-            ui.footMonitor.textContent = running ? `Monitoring every ${secs}s` : "Monitor stopped";
-        }
-
-        function renderKpis() {
-            const users = getMonitoredUsers();
-            let available = 0, unavailable = 0, offline = 0;
-            for (const user of users) {
-                const rec = appState.records.get(user.id);
-                const av = rec ? rec.availability : null;
-                if (isAvailableStatus(av)) available += 1;
-                else if (av && isCountedStatus(av)) unavailable += 1;
-                else offline += 1;
+            ui.accountChip.classList.toggle("hidden", !signedIn);
+            if (signedIn) {
+                const name = appState.account.name || appState.account.username;
+                ui.accountChip.innerHTML = `${avatar(appState.account.username, name)}<span>${escapeHtml(name)}</span>`;
+                ui.accountChip.title = appState.account.username;
             }
-            ui.kpiTracked.textContent = users.length;
-            ui.kpiAvailable.textContent = available;
-            ui.kpiUnavailable.textContent = unavailable;
-            ui.kpiOffline.textContent = offline;
+
+            if (running) {
+                ui.monitorBtn.className = "btn live-btn";
+                ui.monitorBtn.innerHTML = `<span class="live-dot"></span><span>Live</span><span class="mono small" data-live-session>${fmtClock(Date.now() - appState.sessionStartedAt)}</span><span class="stop">Stop</span>`;
+                ui.monitorBtn.title = "Stop monitoring";
+            } else {
+                ui.monitorBtn.className = "btn btn-accent";
+                ui.monitorBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span>Go live</span>`;
+                ui.monitorBtn.title = "Start monitoring";
+            }
+
+            ui.accountBox.innerHTML = signedIn
+                ? `${avatar(appState.account.username, appState.account.name || appState.account.username)}<div><strong>${escapeHtml(appState.account.name || appState.account.username)}</strong><div class="muted small">${escapeHtml(appState.account.username)}</div></div><button type="button" class="btn btn-sm" data-action="signout">Sign out</button>`
+                : `<span class="avatar" style="--h:220">?</span><div><strong>Not signed in</strong><div class="muted small">Save your app details below, then sign in with Microsoft.</div></div><button type="button" class="btn btn-sm btn-solid" data-action="signin">Sign in</button>`;
         }
 
-        function emptyTracked() {
-            return `<div class="empty-state"><strong>No one is tracked yet</strong>Add people in Settings to start seeing their status here.<br /><button type="button" class="btn btn-dark" data-goto="settings">Open settings</button></div>`;
-        }
-
-        function renderTeamGrid() {
+        function renderSetup() {
             const users = getMonitoredUsers();
+            const running = Boolean(appState.timerId);
+            const steps = [
+                { done: hasSavedConnection(), title: "Connect your app", text: "Paste your Entra Tenant ID and Client ID.", btn: "Open settings", action: "goto-settings" },
+                { done: Boolean(appState.account), title: "Sign in", text: "Use a Microsoft account in that tenant.", btn: "Sign in", action: "signin" },
+                { done: users.length > 0, title: "Choose people", text: "Pick who to track from your directory.", btn: "Add people", action: "goto-people" },
+                { done: running, title: "Go live", text: "Keep this tab open while it runs.", btn: "Go live", action: "start" }
+            ];
+            const firstOpen = steps.findIndex((s) => !s.done);
+
+            if (firstOpen === -1) {
+                ui.setupArea.innerHTML = "";
+            } else if (firstOpen === 3) {
+                ui.setupArea.innerHTML = `
+                    <div class="paused">
+                        <span class="live-dot" style="background: var(--offline); animation: none;"></span>
+                        <p><b>Monitor is paused.</b> Totals and timelines only grow while it's live${appState.lastPollAt ? ` — last check ${escapeHtml(timeAgo(appState.lastPollAt))}` : ""}.</p>
+                        <button type="button" class="btn btn-accent btn-sm" data-action="start">Go live</button>
+                    </div>`;
+            } else {
+                ui.setupArea.innerHTML = `
+                    <section class="card">
+                        <div class="card-head"><div><h3>Get set up</h3><p>Four quick steps and the dashboard comes alive.</p></div></div>
+                        <div class="setup">
+                            ${steps.map((s, i) => `
+                                <div class="step${s.done ? " done" : ""}">
+                                    <span class="step-num">${s.done ? "✓" : i + 1}</span>
+                                    <strong>${s.title}</strong>
+                                    <span class="muted">${s.text}</span>
+                                    ${!s.done && i === firstOpen ? `<button type="button" class="btn btn-sm btn-accent" data-action="${s.action}">${s.btn}</button>` : ""}
+                                </div>`).join("")}
+                        </div>
+                    </section>`;
+            }
+        }
+
+        function renderHero() {
+            const users = getMonitoredUsers();
+            const counts = { available: 0, unavailable: 0, offline: 0 };
+            users.forEach((u) => { counts[statusGroup(currentAv(u.id))] += 1; });
+            ui.nowAvailable.textContent = counts.available;
+            ui.nowTotal.textContent = users.length;
+            const parts = [["available", "var(--available)", "available"], ["unavailable", "var(--away)", "unavailable"], ["offline", "var(--offline)", "offline / unknown"]];
+            ui.compoBar.innerHTML = users.length
+                ? parts.filter(([k]) => counts[k]).map(([k, c]) => `<i style="flex-grow:${counts[k]}; background:${c}"></i>`).join("")
+                : "";
+            ui.compoLegend.innerHTML = parts.map(([k, c, label]) => `<span><i style="background:${c}"></i>${counts[k]} ${label}</span>`).join("");
+            document.querySelectorAll("[data-period-label]").forEach((el) => {
+                el.textContent = el.closest(".stat-card") ? `${PERIOD_LABELS[appState.period]} · all tracked people` : PERIOD_LABELS[appState.period];
+            });
+        }
+
+        function renderFilters() {
+            const users = getMonitoredUsers();
+            const counts = { all: users.length, available: 0, unavailable: 0, offline: 0 };
+            users.forEach((u) => { counts[statusGroup(currentAv(u.id))] += 1; });
+            const labels = { all: "All", available: "Available", unavailable: "Unavailable", offline: "Offline" };
+            ui.statusFilter.innerHTML = Object.keys(labels).map((k) =>
+                `<button type="button" data-filter="${k}" class="${appState.filter === k ? "active" : ""}">${labels[k]} <b>${counts[k]}</b></button>`).join("");
+        }
+
+        /* ---------- Timeline ---------- */
+        function timelineWindow(users, offset, nowMs) {
+            const dayStart = startOfDay(nowMs, offset);
+            const dayEnd = startOfDay(nowMs, offset - 1);
+            let first = Infinity, last = -Infinity;
+            for (const u of users) {
+                const rec = appState.records.get(u.id);
+                if (!rec) continue;
+                for (const seg of segmentsFor(rec, nowMs)) {
+                    if (seg.e <= dayStart || seg.s >= dayEnd) continue;
+                    first = Math.min(first, Math.max(seg.s, dayStart));
+                    last = Math.max(last, Math.min(seg.e, dayEnd));
+                }
+            }
+            const hour = 3600000;
+            let from = dayStart + 8 * hour;
+            let to = dayStart + 18 * hour;
+            if (first < from) from = Math.floor((first - dayStart) / hour) * hour + dayStart;
+            if (offset === 0 && nowMs > to) to = nowMs;
+            if (last > to) to = last;
+            to = Math.min(dayEnd, Math.ceil((to - dayStart) / hour) * hour + dayStart);
+            return { from, to, dayStart, dayEnd };
+        }
+
+        function axisHtml(win, compact) {
+            const hour = 3600000;
+            const span = win.to - win.from;
+            const step = span > 14 * hour ? 3 * hour : span > 8 * hour ? 2 * hour : hour;
+            const ticks = [];
+            for (let t = win.from; t <= win.to; t += step) {
+                ticks.push(`<span style="left:${(((t - win.from) / span) * 100).toFixed(2)}%">${new Date(t).toLocaleTimeString([], { hour: "numeric" })}</span>`);
+            }
+            return `<div class="tl-axis${compact ? " compact" : ""}">${ticks.join("")}</div>`;
+        }
+
+        function trackHtml(userId, win, nowMs, offset) {
+            const rec = appState.records.get(userId);
+            const span = win.to - win.from;
+            let html = "";
+            if (rec) {
+                for (const seg of segmentsFor(rec, nowMs)) {
+                    const s = Math.max(seg.s, win.from), e = Math.min(seg.e, win.to);
+                    if (e <= s) continue;
+                    const left = ((s - win.from) / span) * 100;
+                    const width = ((e - s) / span) * 100;
+                    const label = seg.adj ? "Away adjustment" : prettyStatus(seg.st);
+                    const tip = `${label}\n${hhmm(s)} – ${seg.live ? "now" : hhmm(e)} · ${fmt(e - s)}`;
+                    html += `<div class="seg ${seg.adj ? "adj" : ""} ${seg.live ? "live" : ""} ${statusClass(seg.st)}" style="left:${left.toFixed(3)}%;width:${width.toFixed(3)}%" data-tip="${escapeHtml(tip)}"></div>`;
+                }
+            }
+            if (offset === 0 && nowMs >= win.from && nowMs <= win.to) {
+                html += `<div class="tl-now" style="left:${(((nowMs - win.from) / span) * 100).toFixed(3)}%" data-tip="Now · ${hhmm(nowMs)}"></div>`;
+            }
+            return `<div class="tl-track">${html}</div>`;
+        }
+
+        function dayNavHtml() {
+            return `
+                <button type="button" class="icon-btn" style="width:34px;height:34px;" data-day="1" aria-label="Previous day">‹</button>
+                <span class="tl-day">${escapeHtml(dayLabel(appState.dayOffset))}</span>
+                <button type="button" class="icon-btn" style="width:34px;height:34px;" data-day="-1" aria-label="Next day" ${appState.dayOffset === 0 ? "disabled" : ""}>›</button>`;
+        }
+
+        function renderTeamTimeline(nowMs = Date.now()) {
+            document.querySelectorAll("[data-day-nav]").forEach((el) => { el.innerHTML = dayNavHtml(); });
+            const users = visibleUsers(nowMs);
+            if (getMonitoredUsers().length === 0) {
+                ui.teamTimeline.innerHTML = `<div class="empty-state"><strong>Nothing to draw yet</strong>Add people and go live — each person gets a bar showing their day.</div>`;
+                return;
+            }
             if (users.length === 0) {
+                ui.teamTimeline.innerHTML = `<div class="empty-state">No one matches the current filter.</div>`;
+                return;
+            }
+            const win = timelineWindow(users, appState.dayOffset, nowMs);
+            const dayEnd = appState.dayOffset === 0 ? nowMs : win.dayEnd;
+            ui.teamTimeline.innerHTML = axisHtml(win, false) + `<div class="timeline">${users.map((u) => {
+                const t = totalsBetween(u.id, win.dayStart, dayEnd, nowMs);
+                return `
+                    <div class="tl-row">
+                        <div class="tl-who" data-open-person="${escapeHtml(u.id)}">${avatar(u.id, userLabel(u), currentAv(u.id))}<strong>${escapeHtml(userLabel(u))}</strong></div>
+                        ${trackHtml(u.id, win, nowMs, appState.dayOffset)}
+                        <div class="tl-share" data-tip="${escapeHtml(`${dayLabel(appState.dayOffset)}: ${fmt(t.available)} available of ${fmt(t.online)} online`)}">${pctText(t)}</div>
+                    </div>`;
+            }).join("")}</div>`;
+        }
+
+        /* ---------- Cards & feed ---------- */
+        function emptyTracked() {
+            return `<div class="empty-state" style="grid-column: 1 / -1;"><strong>No one is tracked yet</strong>Pick people from your directory to start.<br /><button type="button" class="btn btn-accent" data-action="goto-people">Add people</button></div>`;
+        }
+
+        function renderTeamGrid(nowMs = Date.now()) {
+            if (getMonitoredUsers().length === 0) {
                 ui.teamGrid.innerHTML = emptyTracked();
                 return;
             }
-            const now = Date.now();
+            const users = visibleUsers(nowMs);
+            if (users.length === 0) {
+                ui.teamGrid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">No one matches the current filter.</div>`;
+                return;
+            }
             ui.teamGrid.innerHTML = users.map((user) => {
                 const rec = appState.records.get(user.id);
                 const av = rec ? rec.availability : null;
-                const t = timesFor(user.id, now);
+                const t = timesFor(user.id, nowMs);
                 const sub = rec && rec.checkedAt
                     ? (isErrorStatus(av) ? "Last check failed" : `${prettyActivity(rec.activity) || prettyStatus(av)} · ${timeAgo(rec.checkedAt)}`)
                     : "Not checked yet";
                 return `
-                    <article class="person-card" tabindex="0" data-open-person="${escapeHtml(user.id)}">
+                    <article class="person-card ${statusClass(av)}" tabindex="0" data-open-person="${escapeHtml(user.id)}">
                         <div class="pc-head">
                             ${avatar(user.id, userLabel(user), av)}
-                            <div class="pc-name">
-                                <strong>${escapeHtml(userLabel(user))}</strong>
-                                <span>${escapeHtml(sub)}</span>
-                            </div>
+                            <div class="pc-name"><strong>${escapeHtml(userLabel(user))}</strong><span>${escapeHtml(sub)}</span></div>
                             ${pill(av)}
                         </div>
-                        <div class="pc-share-row">
-                            <div class="pc-share-meta"><span>Available share</span>${liveValue("pct", user.id, pctText(t))}</div>
-                            ${shareBar(user.id, t)}
-                        </div>
-                        <div class="pc-stats">
-                            <div><div class="stat-label">Online</div><div class="stat-value">${liveValue("online", user.id, fmt(t.online))}</div></div>
-                            <div><div class="stat-label">Available</div><div class="stat-value">${liveValue("available", user.id, fmt(t.available))}</div></div>
-                            <div><div class="stat-label">Unavail.</div><div class="stat-value">${liveValue("unavailable", user.id, fmt(t.unavailable))}</div></div>
+                        <div class="pc-body">
+                            ${ring(user.id, t)}
+                            <div class="pc-stats">
+                                <div class="pc-stat"><span>Online</span>${liveValue("online", user.id, fmt(t.online))}</div>
+                                <div class="pc-stat st-available"><span><i></i>Available</span>${liveValue("available", user.id, fmt(t.available))}</div>
+                                <div class="pc-stat st-busy"><span><i></i>Unavailable</span>${liveValue("unavailable", user.id, fmt(t.unavailable))}</div>
+                            </div>
                         </div>
                     </article>`;
             }).join("");
         }
 
-        function logLine(entry, showName = true) {
+        function feedItem(entry, withAvatar = true) {
             const name = entry.userLabel || entry.userId;
             return `
-                <div class="feed-item">
-                    ${showName ? avatar(entry.userId, name) : ""}
-                    <div class="feed-text">
-                        ${showName ? `<strong>${escapeHtml(name)}</strong> ` : ""}
-                        ${pill(entry.fromAvailability)}<span class="arrow">→</span>${pill(entry.toAvailability)}
+                <div class="feed-item${withAvatar ? "" : " no-avatar"}">
+                    ${withAvatar ? avatar(entry.userId, name) : ""}
+                    <div>
+                        <div class="feed-top"><strong>${withAvatar ? escapeHtml(name) : escapeHtml(prettyActivity(entry.activity) || "Status change")}</strong><span class="feed-time">${escapeHtml(fmtWhen(new Date(entry.timestamp).getTime()))}</span></div>
+                        <div class="feed-change">${pill(entry.fromAvailability)}<span class="arrow">→</span>${pill(entry.toAvailability)}</div>
                     </div>
-                    <div class="feed-time">${escapeHtml(fmtDateTime(new Date(entry.timestamp).getTime()))}</div>
                 </div>`;
         }
 
-        function renderRecentFeed() {
-            const recent = appState.logs.slice(-8).reverse();
+        function renderFeed() {
+            const recent = appState.logs.slice(-9).reverse();
             ui.recentFeed.innerHTML = recent.length
-                ? recent.map((e) => logLine(e)).join("")
-                : `<div class="empty-state"><strong>No changes yet</strong>Status changes appear here once the monitor is running.</div>`;
+                ? recent.map((e) => feedItem(e)).join("")
+                : `<div class="empty-state"><strong>Quiet so far</strong>Status changes stream in here once the monitor is live.</div>`;
         }
 
-        function renderPeopleList() {
-            const users = getMonitoredUsers();
+        /* ---------- People view ---------- */
+        function renderPeopleList(nowMs = Date.now()) {
+            const users = sortUsers(getMonitoredUsers(), nowMs);
             if (users.length === 0) {
                 ui.trackedPeopleList.innerHTML = emptyTracked();
                 return;
@@ -1479,88 +1996,107 @@
                 appState.selectedDetailUserId = users[0].id;
             }
             ui.trackedPeopleList.innerHTML = users.map((user) => {
-                const rec = appState.records.get(user.id);
-                const av = rec ? rec.availability : null;
-                const active = user.id === appState.selectedDetailUserId ? " active" : "";
+                const av = currentAv(user.id);
+                const t = timesFor(user.id, nowMs);
                 return `
-                    <button type="button" class="person-row${active}" data-person-id="${escapeHtml(user.id)}">
+                    <button type="button" class="person-row${user.id === appState.selectedDetailUserId ? " active" : ""}" data-person-id="${escapeHtml(user.id)}">
                         ${avatar(user.id, userLabel(user), av)}
-                        <span class="pc-name">
-                            <strong>${escapeHtml(userLabel(user))}</strong>
-                            <span>${escapeHtml(prettyStatus(av))}</span>
-                        </span>
+                        <span class="pc-name"><strong>${escapeHtml(userLabel(user))}</strong><span>${escapeHtml(prettyStatus(av))}</span></span>
+                        <span class="share-mini">${liveValue("pct", user.id, pctText(t))}</span>
                     </button>`;
             }).join("");
         }
 
-        function renderPersonDetail() {
+        function weekHtml(userId, nowMs) {
+            const days = [];
+            for (let off = 6; off >= 0; off -= 1) {
+                const from = startOfDay(nowMs, off);
+                const to = off === 0 ? nowMs : startOfDay(nowMs, off - 1);
+                days.push({ off, t: totalsBetween(userId, from, to, nowMs), label: new Date(from).toLocaleDateString([], { weekday: "short" }) });
+            }
+            const max = Math.max(3600000, ...days.map((d) => d.t.online));
+            return `<div class="week">${days.map((d) => {
+                const h = (d.t.online / max) * 100;
+                const a = d.t.online ? (d.t.available / d.t.online) * 100 : 0;
+                const tip = `${dayLabel(d.off)}\nOnline ${fmt(d.t.online)}\nAvailable ${fmt(d.t.available)} · Unavailable ${fmt(d.t.unavailable)}`;
+                return `
+                    <div class="week-col${d.off === appState.dayOffset ? " active" : ""}" data-set-day="${d.off}" data-tip="${escapeHtml(tip)}">
+                        <div class="week-bar" style="height:${Math.max(2, h).toFixed(1)}%"><i style="height:${a.toFixed(1)}%; background: var(--available);"></i><i style="flex:1; background: var(--busy); opacity: .75;"></i></div>
+                        <div class="week-val">${d.t.online ? fmtShort(d.t.online) : "–"}</div>
+                        <div class="week-day">${d.off === 0 ? "Today" : d.label}</div>
+                    </div>`;
+            }).join("")}</div>`;
+        }
+
+        function renderPersonDetail(nowMs = Date.now()) {
             const userId = appState.selectedDetailUserId;
             if (!userId) {
-                ui.personDetail.innerHTML = `<div class="empty-state"><strong>Nobody selected</strong>Pick a person from the list.</div>`;
+                ui.personDetail.innerHTML = `<div class="empty-state"><strong>Nobody selected</strong>Pick someone from the list.</div>`;
                 return;
             }
             const user = appState.selectedUsers.get(userId) || { id: userId, displayName: userId };
             const rec = appState.records.get(userId);
             const av = rec ? rec.availability : null;
-            const t = timesFor(userId);
-            const history = appState.logs.filter((l) => l.userId === userId).slice(-10).reverse();
-            const email = user.mail || user.userPrincipalName || "";
+            const t = timesFor(userId, nowMs);
+            const history = appState.logs.filter((l) => l.userId === userId).slice(-8).reverse();
+            const win = timelineWindow([user], appState.dayOffset, nowMs);
+            const activity = rec && rec.checkedAt && !isErrorStatus(av) ? prettyActivity(rec.activity) : "";
 
             ui.personDetail.innerHTML = `
-                <div class="detail-head">
-                    ${avatar(userId, userLabel(user), av, "lg")}
-                    <div style="flex: 1; min-width: 0;">
-                        <h3>${escapeHtml(userLabel(user))}</h3>
-                        <p>${escapeHtml(email || userId)}</p>
+                <div class="detail-hero">
+                    ${ring(userId, t, true)}
+                    <div style="min-width: 0;">
+                        <div class="eyebrow">${escapeHtml(PERIOD_LABELS[appState.period])}</div>
+                        <h2>${escapeHtml(userLabel(user))}</h2>
+                        <p>${escapeHtml(user.mail || user.userPrincipalName || userId)}</p>
+                        ${pill(av)} <span class="muted small" style="margin-left: 6px;">${rec && rec.checkedAt ? `${activity ? `${escapeHtml(activity)} · ` : ""}checked ${escapeHtml(timeAgo(rec.checkedAt))}` : "Not checked yet"}</span>
                     </div>
-                    <div style="text-align: right;">
-                        ${pill(av)}
-                        <div class="muted small" style="margin-top: 6px;">${rec && rec.checkedAt ? `Checked ${escapeHtml(timeAgo(rec.checkedAt))}` : "Not checked yet"}</div>
+                    <div class="detail-stats" style="min-width: 0;">
+                        <div class="detail-stat"><div class="label">Online</div><div class="value">${liveValue("online", userId, fmt(t.online))}</div></div>
+                        <div class="detail-stat st-available"><div class="label"><i></i>Available</div><div class="value">${liveValue("available", userId, fmt(t.available))}</div></div>
+                        <div class="detail-stat st-busy"><div class="label"><i></i>Unavailable</div><div class="value">${liveValue("unavailable", userId, fmt(t.unavailable))}</div></div>
                     </div>
                 </div>
-                ${rec && isErrorStatus(av) ? `<div class="banner" style="margin-bottom: 16px;">${escapeHtml(rec.activity)}</div>` : ""}
-                <div class="detail-stats">
-                    <div class="detail-stat"><div class="stat-label">Online</div><div class="stat-value">${liveValue("online", userId, fmt(t.online))}</div></div>
-                    <div class="detail-stat"><div class="stat-label">Available</div><div class="stat-value" style="color: var(--available);">${liveValue("available", userId, fmt(t.available))}</div></div>
-                    <div class="detail-stat"><div class="stat-label">Unavailable</div><div class="stat-value" style="color: var(--busy);">${liveValue("unavailable", userId, fmt(t.unavailable))}</div></div>
-                </div>
-                <div class="pc-share-row">
-                    <div class="pc-share-meta"><span>Available share of online time</span>${liveValue("pct", userId, pctText(t))}</div>
-                    ${shareBar(userId, t)}
-                </div>
-                <p class="muted small" style="margin: 10px 0 0;">
-                    ${rec && rec.activity && !isErrorStatus(av) ? `Current activity: <b>${escapeHtml(prettyActivity(rec.activity))}</b> · ` : ""}
-                    Away adjustment applied: ${escapeHtml(fmt(rec ? rec.awayAdjustMs : 0))}
-                    ${rec && rec.firstSeenAt ? ` · First tracked ${escapeHtml(new Date(rec.firstSeenAt).toLocaleString())}` : ""}
-                </p>
-                <div class="section-title">Recent changes</div>
-                <div class="feed">
-                    ${history.length ? history.map((e) => logLine(e, false)).join("") : `<div class="muted small" style="padding: 8px 0;">No changes logged yet.</div>`}
-                </div>`;
+                ${rec && isErrorStatus(av) ? `<div class="banner" style="margin-top: 16px;">${escapeHtml(rec.activity)}</div>` : ""}
+                <div class="section-title"><span>Last 7 days</span><span class="muted" style="text-transform: none; letter-spacing: 0; font-weight: 600;">Green = available · red = unavailable · click a day</span></div>
+                ${weekHtml(userId, nowMs)}
+                <div class="section-title"><span>Day timeline</span><span class="tl-controls" data-day-nav>${dayNavHtml()}</span></div>
+                ${axisHtml(win, true)}
+                <div class="tl-row compact">${trackHtml(userId, win, nowMs, appState.dayOffset)}</div>
+                <p class="muted small" style="margin: 10px 0 0;">Away adjustment in this period: ${escapeHtml(fmt(t.adjusted))}${rec && rec.firstSeenAt ? ` · tracked since ${escapeHtml(new Date(rec.firstSeenAt).toLocaleDateString())}` : ""}</p>
+                <div class="section-title"><span>Recent changes</span></div>
+                <div class="feed">${history.length ? history.map((e) => feedItem(e, false)).join("") : `<div class="muted small">No changes logged yet.</div>`}</div>`;
         }
 
-        function renderTotals() {
-            const users = getMonitoredUsers();
-            const now = Date.now();
+        function renderTotals(nowMs = Date.now()) {
+            const users = sortUsers(getMonitoredUsers(), nowMs);
             ui.totalsBody.innerHTML = users.length ? users.map((user) => {
-                const rec = appState.records.get(user.id);
-                const t = timesFor(user.id, now);
+                const t = timesFor(user.id, nowMs);
                 return `
                     <tr>
                         <td><div class="who">${avatar(user.id, userLabel(user))}<div><strong>${escapeHtml(userLabel(user))}</strong><small>${escapeHtml(user.mail || user.userPrincipalName || user.id)}</small></div></div></td>
-                        <td>${pill(rec ? rec.availability : null)}</td>
+                        <td>${pill(currentAv(user.id))}</td>
                         <td class="num">${liveValue("clock-online", user.id, fmtClock(t.online))}</td>
-                        <td class="num">${liveValue("clock-available", user.id, fmtClock(t.available))}</td>
+                        <td class="num" style="color: var(--available);">${liveValue("clock-available", user.id, fmtClock(t.available))}</td>
                         <td class="num">${liveValue("clock-unavailable", user.id, fmtClock(t.unavailable))}</td>
-                        <td style="min-width: 150px;"><div style="display: flex; gap: 10px; align-items: center;"><div style="flex: 1;">${shareBar(user.id, t)}</div><span class="num small">${liveValue("pct", user.id, pctText(t))}</span></div></td>
+                        <td><div style="display:flex;gap:10px;align-items:center;"><div style="flex:1;">${bar(user.id, t)}</div><span class="num small">${liveValue("pct", user.id, pctText(t))}</span></div></td>
                     </tr>`;
             }).join("") : `<tr><td colspan="6" class="muted">No tracked people yet.</td></tr>`;
         }
 
-        function renderLogTable() {
-            const rows = appState.logs.slice().reverse();
-            ui.logCount.textContent = `${rows.length} ${rows.length === 1 ? "entry" : "entries"}`;
-            ui.logBody.innerHTML = rows.length ? rows.map((e) => {
+        /* ---------- Log ---------- */
+        function renderLog() {
+            const people = new Map();
+            appState.logs.forEach((l) => people.set(l.userId, l.userLabel || l.userId));
+            if (appState.logPerson && !people.has(appState.logPerson)) appState.logPerson = "";
+            ui.logPerson.innerHTML = `<option value="">Everyone</option>` + Array.from(people.entries())
+                .sort((a, b) => a[1].localeCompare(b[1]))
+                .map(([id, name]) => `<option value="${escapeHtml(id)}" ${id === appState.logPerson ? "selected" : ""}>${escapeHtml(name)}</option>`).join("");
+
+            const rows = appState.logs.filter((l) => !appState.logPerson || l.userId === appState.logPerson).slice().reverse();
+            ui.logCount.textContent = `${rows.length} ${rows.length === 1 ? "change" : "changes"}`;
+            const shown = rows.slice(0, 500);
+            ui.logBody.innerHTML = shown.length ? shown.map((e) => {
                 const name = e.userLabel || e.userId;
                 return `
                     <tr>
@@ -1569,12 +2105,14 @@
                         <td>${pill(e.fromAvailability)}<span class="arrow">→</span>${pill(e.toAvailability)}</td>
                         <td class="muted">${escapeHtml(prettyActivity(e.activity) || "—")}</td>
                     </tr>`;
-            }).join("") : `<tr><td colspan="4" class="muted">No changes logged yet.</td></tr>`;
+            }).join("") + (rows.length > shown.length ? `<tr><td colspan="4" class="muted">Showing the latest 500 — export CSV for everything.</td></tr>` : "")
+                : `<tr><td colspan="4" class="muted">No changes logged yet.</td></tr>`;
         }
 
+        /* ---------- Settings ---------- */
         function renderSelectedUsers() {
             const selected = Array.from(appState.selectedUsers.values());
-            ui.selectedCount.textContent = `${selected.length} selected`;
+            ui.selectedCount.textContent = selected.length;
             ui.userIds.value = selected.map((u) => u.id).join(",");
             ui.selectedUsers.innerHTML = selected.length
                 ? selected.map((u) => `<span class="chip">${avatar(u.id, userLabel(u))}${escapeHtml(userLabel(u))}<button type="button" data-remove-id="${escapeHtml(u.id)}" aria-label="Stop tracking ${escapeHtml(userLabel(u))}">×</button></span>`).join("")
@@ -1582,20 +2120,13 @@
         }
 
         function renderDirectoryUsers() {
-            if (appState.directoryUsers.length === 0) {
-                ui.userResults.innerHTML = "";
-                return;
-            }
             ui.userResults.innerHTML = appState.directoryUsers.map((user) => {
                 const checked = appState.selectedUsers.has(user.id);
                 return `
                     <label class="user-card${checked ? " checked" : ""}">
                         <input type="checkbox" data-user-id="${escapeHtml(user.id)}" ${checked ? "checked" : ""} />
                         ${avatar(user.id, userLabel(user))}
-                        <span class="pc-name">
-                            <strong>${escapeHtml(userLabel(user))}</strong>
-                            <span>${escapeHtml(user.mail || user.userPrincipalName || "No email")}</span>
-                        </span>
+                        <span class="pc-name"><strong>${escapeHtml(userLabel(user))}</strong><span>${escapeHtml(user.mail || user.userPrincipalName || "No email")}</span></span>
                     </label>`;
             }).join("");
         }
@@ -1607,24 +2138,29 @@
         }
 
         function renderData() {
-            renderKpis();
-            renderTeamGrid();
-            renderRecentFeed();
-            renderPeopleList();
-            renderPersonDetail();
-            renderTotals();
-            renderLogTable();
+            const now = Date.now();
+            renderTopbar();
+            renderSetup();
+            renderHero();
+            renderFilters();
+            renderTeamTimeline(now);
+            renderTeamGrid(now);
+            renderFeed();
+            renderPeopleList(now);
+            renderPersonDetail(now);
+            renderTotals(now);
+            renderLog();
+            tickLive();
         }
 
         function renderAll() {
-            renderHeader();
             renderSelectedUsers();
             renderDirectoryUsers();
             renderRules();
             renderData();
         }
 
-        // Updates running numbers in place every second without rebuilding the DOM.
+        // Updates running numbers in place every second without rebuilding the page.
         function tickLive() {
             const now = Date.now();
             const cache = new Map();
@@ -1633,7 +2169,10 @@
                 if (!cache.has(uid)) cache.set(uid, timesFor(uid, now));
                 const t = cache.get(uid);
                 const kind = el.dataset.live;
-                if (kind === "bar") {
+                if (kind === "ring") {
+                    const dash = t.online ? (t.pct / 100) * RING_C : 0;
+                    el.setAttribute("stroke-dasharray", `${dash.toFixed(2)} ${RING_C.toFixed(2)}`);
+                } else if (kind === "bar") {
                     el.style.width = `${t.pct.toFixed(1)}%`;
                     el.parentElement.classList.toggle("empty", !t.online);
                 } else if (kind === "pct") {
@@ -1644,10 +2183,30 @@
                     el.textContent = fmt(t[kind]);
                 }
             });
-            updateMonitorPill();
+            const session = document.querySelector("[data-live-session]");
+            if (session && appState.sessionStartedAt) session.textContent = fmtClock(now - appState.sessionStartedAt);
         }
 
-        /* ---------- Microsoft auth ---------- */
+        function setActiveView(view) {
+            if (!ui.views[view]) return;
+            appState.activeView = view;
+            Object.entries(ui.views).forEach(([key, el]) => el.classList.toggle("active", key === view));
+            ui.navButtons.forEach((b) => b.classList.toggle("active", b.dataset.view === view));
+            ui.viewTitle.textContent = VIEW_META[view].title;
+            ui.viewSubtitle.textContent = VIEW_META[view].subtitle;
+            ui.periodControl.classList.toggle("hidden", !VIEW_META[view].period);
+            window.scrollTo({ top: 0 });
+        }
+
+        function setTheme(theme) {
+            document.documentElement.dataset.theme = theme;
+            storeSet(THEME_KEY, theme);
+            renderTopbar();
+        }
+
+        /* =========================================================
+           Microsoft sign-in
+           ========================================================= */
         async function loadMsalLibrary() {
             if (window.msal && window.msal.PublicClientApplication) return;
             const urls = [
@@ -1677,10 +2236,7 @@
         let msalLoadPromise = null;
         function ensureMsal() {
             if (!msalLoadPromise) {
-                msalLoadPromise = loadMsalLibrary().catch((error) => {
-                    msalLoadPromise = null;
-                    throw error;
-                });
+                msalLoadPromise = loadMsalLibrary().catch((error) => { msalLoadPromise = null; throw error; });
             }
             return msalLoadPromise;
         }
@@ -1688,21 +2244,15 @@
         async function initializeMsalFromInputs() {
             const tenantId = ui.tenantId.value.trim();
             const clientId = ui.clientId.value.trim();
-            if (!tenantId || !clientId) {
-                throw new Error("Add your Tenant ID and Client ID in Settings first.");
-            }
+            if (!tenantId || !clientId) throw new Error("Add your Tenant ID and Client ID in Settings first.");
             await ensureMsal();
             appState.msalInstance = new msal.PublicClientApplication({
-                auth: {
-                    clientId,
-                    authority: `https://login.microsoftonline.com/${tenantId}`,
-                    redirectUri: window.location.origin + window.location.pathname
-                },
+                auth: { clientId, authority: `https://login.microsoftonline.com/${tenantId}`, redirectUri: window.location.origin + window.location.pathname },
                 cache: { cacheLocation: "localStorage" }
             });
             await appState.msalInstance.initialize();
             appState.account = appState.msalInstance.getAllAccounts()[0] || null;
-            renderHeader();
+            renderData();
         }
 
         async function signIn() {
@@ -1711,7 +2261,7 @@
             try {
                 const res = await appState.msalInstance.loginPopup({ scopes: GRAPH_SCOPES });
                 appState.account = res.account;
-                renderHeader();
+                renderData();
                 toast(`Signed in as ${appState.account.username}`);
             } catch (error) {
                 const code = lower(error && error.errorCode);
@@ -1725,9 +2275,7 @@
         }
 
         async function getAccessToken(scopes = GRAPH_SCOPES) {
-            if (!appState.msalInstance || !appState.account) {
-                throw new Error("Please sign in first.");
-            }
+            if (!appState.msalInstance || !appState.account) throw new Error("Please sign in first.");
             const request = { account: appState.account, scopes };
             try {
                 return (await appState.msalInstance.acquireTokenSilent(request)).accessToken;
@@ -1744,11 +2292,13 @@
                 await appState.msalInstance.logoutPopup({ account: appState.account });
             }
             appState.account = null;
-            renderHeader();
+            renderData();
             toast("Signed out");
         }
 
-        /* ---------- Graph ---------- */
+        /* =========================================================
+           Microsoft Graph
+           ========================================================= */
         async function loadDirectoryUsers() {
             setError("");
             const token = await getAccessToken(["User.Read", "User.ReadBasic.All"]);
@@ -1756,19 +2306,14 @@
             let url = "https://graph.microsoft.com/v1.0/users?$select=id,displayName,mail,userPrincipalName&$top=30";
             if (term) {
                 const safe = term.replaceAll("'", "''");
-                const filter = `startswith(displayName,'${safe}') or startswith(mail,'${safe}') or startswith(userPrincipalName,'${safe}')`;
-                url += `&$filter=${encodeURIComponent(filter)}`;
+                url += `&$filter=${encodeURIComponent(`startswith(displayName,'${safe}') or startswith(mail,'${safe}') or startswith(userPrincipalName,'${safe}')`)}`;
             }
             ui.loadUsersBtn.disabled = true;
             try {
                 const response = await fetch(url, { headers: { Authorization: `Bearer ${token}`, ConsistencyLevel: "eventual" } });
-                if (!response.ok) {
-                    throw new Error(`User lookup failed (${response.status}): ${await response.text()}`);
-                }
+                if (!response.ok) throw new Error(`User lookup failed (${response.status}): ${await response.text()}`);
                 const result = await response.json();
-                appState.directoryUsers = (result.value || []).map((u) => ({
-                    id: u.id, displayName: u.displayName, mail: u.mail, userPrincipalName: u.userPrincipalName
-                }));
+                appState.directoryUsers = (result.value || []).map((u) => ({ id: u.id, displayName: u.displayName, mail: u.mail, userPrincipalName: u.userPrincipalName }));
                 renderDirectoryUsers();
                 if (appState.directoryUsers.length === 0) {
                     ui.userResults.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;"><strong>No matches</strong>Try a different name or email.</div>`;
@@ -1779,23 +2324,62 @@
         }
 
         async function fetchPresenceForUser(userId, token) {
-            const response = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userId)}/presence`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (!response.ok) {
-                throw new Error(`Presence check failed (${response.status}): ${await response.text()}`);
-            }
+            const response = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userId)}/presence`, { headers: { Authorization: `Bearer ${token}` } });
+            if (!response.ok) throw new Error(`Presence check failed (${response.status}): ${await response.text()}`);
             return response.json();
         }
 
-        /* ---------- Monitoring ---------- */
-        async function pollPresenceOnce() {
-            if (appState.polling) return;
-            const users = getMonitoredUsers();
-            if (users.length === 0) {
-                renderData();
-                return;
+        // One request for everyone (up to 650 per call); falls back to one request per person.
+        async function fetchPresences(users, token) {
+            const results = new Map();
+            const batchable = appState.batchSupported && users.every((u) => GUID_RE.test(u.id));
+            if (batchable) {
+                try {
+                    for (let i = 0; i < users.length; i += 650) {
+                        const ids = users.slice(i, i + 650).map((u) => u.id);
+                        const response = await fetch("https://graph.microsoft.com/v1.0/communications/getPresencesByUserId", {
+                            method: "POST",
+                            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+                            body: JSON.stringify({ ids })
+                        });
+                        if (!response.ok) {
+                            const body = await response.text();
+                            if (response.status >= 400 && response.status < 500 && response.status !== 401 && response.status !== 429) {
+                                appState.batchSupported = false;
+                            }
+                            throw new Error(`Batch presence check failed (${response.status}): ${body}`);
+                        }
+                        const data = await response.json();
+                        (data.value || []).forEach((p) => results.set(p.id, p));
+                    }
+                    users.forEach((u) => { if (!results.has(u.id)) results.set(u.id, new Error("No presence returned for this person.")); });
+                    return results;
+                } catch (error) {
+                    if (appState.batchSupported) {
+                        users.forEach((u) => results.set(u.id, error));
+                        return results;
+                    }
+                    results.clear(); // fall through to per-person checks
+                }
             }
+            for (const user of users) {
+                if (!appState.timerId) break;
+                try {
+                    results.set(user.id, await fetchPresenceForUser(user.id, token));
+                } catch (error) {
+                    results.set(user.id, error);
+                }
+            }
+            return results;
+        }
+
+        /* =========================================================
+           Monitoring
+           ========================================================= */
+        async function pollPresenceOnce() {
+            if (appState.polling || !appState.timerId) return;
+            const users = getMonitoredUsers();
+            if (users.length === 0) { renderData(); return; }
 
             appState.polling = true;
             try {
@@ -1804,71 +2388,70 @@
                     token = await getAccessToken();
                 } catch (error) {
                     const now = Date.now();
-                    users.forEach((user) => applyError(user, `Sign-in problem: ${errorText(error)}`, now));
+                    users.forEach((u) => applyError(u, `Sign-in problem: ${errorText(error)}`, now));
                     setError(`Couldn't get a Microsoft token: ${errorText(error)}`);
                     return;
                 }
-
+                const results = await fetchPresences(users, token);
+                if (!appState.timerId) return; // stopped while waiting
+                const now = Date.now();
                 for (const user of users) {
-                    if (!appState.timerId) break; // stopped mid-poll
-                    try {
-                        const presence = await fetchPresenceForUser(user.id, token);
-                        applyPresence(user, presence, Date.now());
-                    } catch (error) {
-                        applyError(user, errorText(error), Date.now());
+                    const result = results.get(user.id);
+                    if (!result || result instanceof Error) {
+                        applyError(user, result ? errorText(result) : "No result", now);
+                    } else {
+                        applyPresence(user, result, now);
                     }
                 }
-                appState.lastPollAt = Date.now();
+                appState.lastPollAt = now;
             } finally {
                 appState.polling = false;
                 saveLogs();
                 saveMonitorState();
                 renderData();
-                updateMonitorPill();
             }
         }
 
         async function startMonitoring() {
             setError("");
-            if (!appState.account) throw new Error("Sign in with Microsoft before starting the monitor.");
+            if (!appState.account) throw new Error("Sign in with Microsoft before going live.");
             if (getMonitoredUsers().length === 0) {
-                setActiveView("settings");
+                goToPeopleManager();
                 throw new Error("Add at least one person to track first.");
             }
-            if (appState.timerId) clearInterval(appState.timerId);
-
+            clearInterval(appState.timerId);
             appState.runningPollMs = Number(ui.pollSeconds.value) * 1000;
+            appState.sessionStartedAt = Date.now();
             appState.timerId = setInterval(pollPresenceOnce, appState.runningPollMs);
             clearInterval(appState.tickId);
             appState.tickId = setInterval(tickLive, 1000);
-            renderHeader();
             renderRules();
-            toast("Monitoring started");
+            renderData();
+            toast("You're live");
             await pollPresenceOnce();
         }
 
         function stopMonitoring() {
-            const now = Date.now();
-            closeAllIntervals(now);
+            closeAllIntervals(Date.now());
             clearInterval(appState.timerId);
             clearInterval(appState.tickId);
             appState.timerId = null;
             appState.tickId = null;
             appState.runningPollMs = null;
+            appState.sessionStartedAt = null;
             saveMonitorState();
-            renderHeader();
             renderRules();
             renderData();
         }
 
-        function resetTotalsAndLog() {
-            if (!window.confirm("Reset everyone's totals and clear the activity log? This can't be undone.")) return;
+        function resetAll() {
+            if (!window.confirm("Reset everyone's totals, timelines and the activity log? This can't be undone.")) return;
             appState.logs = [];
             appState.records.clear();
             saveLogs();
             saveMonitorState();
             renderData();
-            toast("Totals and log reset");
+            toast("All history reset");
         }
 
         function setTracked(user, tracked) {
@@ -1880,58 +2463,137 @@
             renderData();
         }
 
-        function exportLogsToCsv() {
-            if (appState.logs.length === 0) {
-                toast("No log entries to export");
-                return;
-            }
-            const header = ["timestamp", "userId", "userName", "fromAvailability", "toAvailability", "activity"];
-            const lines = [header.join(",")];
-            for (const row of appState.logs) {
-                lines.push([row.timestamp, row.userId, row.userLabel, row.fromAvailability, row.toAvailability, row.activity]
-                    .map((v) => `"${String(v ?? "").replaceAll('"', '""')}"`).join(","));
-            }
-            const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+        function goToPeopleManager() {
+            setActiveView("settings");
+            setTimeout(() => {
+                document.getElementById("peopleManager").scrollIntoView({ behavior: "smooth", block: "start" });
+                ui.userSearch.focus({ preventScroll: true });
+            }, 50);
+        }
+
+        function downloadCsv(name, rows) {
+            const csv = rows.map((r) => r.map((v) => `"${String(v ?? "").replaceAll('"', '""')}"`).join(",")).join("\n");
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `teams-presence-log-${new Date().toISOString().slice(0, 19).replaceAll(":", "-")}.csv`;
+            a.download = `${name}-${new Date().toISOString().slice(0, 16).replaceAll(":", "-")}.csv`;
             a.click();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         }
 
-        /* ---------- Events ---------- */
+        function exportLog() {
+            if (appState.logs.length === 0) { toast("Nothing to export yet"); return; }
+            downloadCsv("presence-activity", [["timestamp", "userId", "userName", "fromAvailability", "toAvailability", "activity"],
+                ...appState.logs.map((r) => [r.timestamp, r.userId, r.userLabel, r.fromAvailability, r.toAvailability, r.activity])]);
+        }
+
+        function exportTotals() {
+            const users = getMonitoredUsers();
+            if (users.length === 0) { toast("No tracked people yet"); return; }
+            const now = Date.now();
+            const r = periodRange(now);
+            downloadCsv(`presence-totals-${appState.period}`, [
+                ["period", "from", "to", "name", "email", "userId", "online_hms", "available_hms", "unavailable_hms", "available_pct", "online_minutes", "available_minutes", "unavailable_minutes"],
+                ...users.map((u) => {
+                    const t = timesFor(u.id, now);
+                    return [PERIOD_LABELS[appState.period], r.from ? new Date(r.from).toISOString() : "", new Date(r.to).toISOString(),
+                        userLabel(u), u.mail || u.userPrincipalName || "", u.id,
+                        fmtClock(t.online), fmtClock(t.available), fmtClock(t.unavailable), t.online ? t.pct.toFixed(1) : "",
+                        (t.online / 60000).toFixed(1), (t.available / 60000).toFixed(1), (t.unavailable / 60000).toFixed(1)];
+                })
+            ]);
+        }
+
+        /* =========================================================
+           Events
+           ========================================================= */
         ui.navButtons.forEach((b) => b.addEventListener("click", () => setActiveView(b.dataset.view)));
 
+        async function runAction(action) {
+            try {
+                if (action === "signin") await signIn();
+                else if (action === "signout") await signOut();
+                else if (action === "start") await startMonitoring();
+                else if (action === "goto-settings") setActiveView("settings");
+                else if (action === "goto-people") goToPeopleManager();
+                else if (action === "export-totals") exportTotals();
+                else if (action === "export-log") exportLog();
+            } catch (error) {
+                setError(errorText(error));
+            }
+        }
+
         document.addEventListener("click", (event) => {
-            const goto = event.target.closest("[data-goto]");
-            if (goto) {
-                setActiveView(goto.dataset.goto);
+            const el = event.target.closest("[data-action],[data-goto],[data-open-person],[data-day],[data-set-day],[data-period],[data-filter],[data-theme-set]");
+            if (!el) return;
+            if (el.dataset.action) { runAction(el.dataset.action); return; }
+            if (el.dataset.goto) { setActiveView(el.dataset.goto); return; }
+            if (el.dataset.themeSet) { setTheme(el.dataset.themeSet); return; }
+            if (el.dataset.period) {
+                appState.period = el.dataset.period;
+                ui.periodControl.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.period === appState.period));
+                saveConfig();
+                renderData();
                 return;
             }
-            const card = event.target.closest("[data-open-person]");
-            if (card) {
-                appState.selectedDetailUserId = card.dataset.openPerson;
-                renderPeopleList();
-                renderPersonDetail();
+            if (el.dataset.filter) { appState.filter = el.dataset.filter; renderData(); return; }
+            if (el.dataset.day) {
+                appState.dayOffset = Math.max(0, Math.min(180, appState.dayOffset + Number(el.dataset.day)));
+                renderData();
+                return;
+            }
+            if (el.dataset.setDay !== undefined) { appState.dayOffset = Number(el.dataset.setDay); renderData(); return; }
+            if (el.dataset.openPerson) {
+                appState.selectedDetailUserId = el.dataset.openPerson;
                 setActiveView("people");
+                renderData();
             }
         });
 
-        ui.teamGrid.addEventListener("keydown", (event) => {
-            if (event.key !== "Enter" && event.key !== " ") return;
-            const card = event.target.closest("[data-open-person]");
-            if (!card) return;
-            event.preventDefault();
-            card.click();
+        document.addEventListener("keydown", (event) => {
+            if ((event.key === "Enter" || event.key === " ") && event.target.matches(".person-card")) {
+                event.preventDefault();
+                event.target.click();
+            }
         });
 
+        // Floating tooltip for timeline blocks and chart bars.
+        document.addEventListener("mousemove", (event) => {
+            const el = event.target.closest("[data-tip]");
+            if (!el) { ui.tooltip.classList.remove("show"); return; }
+            ui.tooltip.textContent = el.dataset.tip;
+            ui.tooltip.classList.add("show");
+            const pad = 14;
+            const w = ui.tooltip.offsetWidth, h = ui.tooltip.offsetHeight;
+            let x = event.clientX + pad, y = event.clientY - h - pad;
+            if (x + w > window.innerWidth - 8) x = event.clientX - w - pad;
+            if (y < 8) y = event.clientY + pad;
+            ui.tooltip.style.left = `${x}px`;
+            ui.tooltip.style.top = `${y}px`;
+        });
+
+        ui.themeBtn.addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
         $("dismissError").addEventListener("click", () => setError(""));
+        ui.peopleSearch.addEventListener("input", () => { appState.query = ui.peopleSearch.value; renderTeamGrid(); renderTeamTimeline(); tickLive(); });
+        ui.sortSelect.addEventListener("change", () => { appState.sort = ui.sortSelect.value; renderData(); });
+        ui.logPerson.addEventListener("change", () => { appState.logPerson = ui.logPerson.value; renderLog(); });
+
+        ui.signInBtn.addEventListener("click", () => runAction("signin"));
+
+        ui.monitorBtn.addEventListener("click", () => {
+            if (appState.timerId) {
+                stopMonitoring();
+                toast("Monitoring stopped");
+                return;
+            }
+            runAction("start");
+        });
 
         ui.saveConfigBtn.addEventListener("click", () => {
             setError("");
             saveConfig();
-            appState.msalInstance = null; // pick up any new tenant/client IDs on next sign-in
+            appState.msalInstance = null; // pick up any new IDs
             if (appState.timerId) {
                 const newMs = Number(ui.pollSeconds.value) * 1000;
                 if (newMs !== appState.runningPollMs) {
@@ -1941,49 +2603,17 @@
                 }
             }
             renderRules();
-            updateMonitorPill();
+            renderData();
             initializeMsalFromInputs().catch(() => {});
             toast("Settings saved");
         });
 
-        ui.signInBtn.addEventListener("click", async () => {
-            try {
-                await signIn();
-            } catch (error) {
-                setError(`Sign-in failed: ${errorText(error)}`);
-            }
-        });
-
-        ui.monitorBtn.addEventListener("click", async () => {
-            if (appState.timerId) {
-                stopMonitoring();
-                toast("Monitoring stopped");
-                return;
-            }
-            try {
-                await startMonitoring();
-            } catch (error) {
-                setError(errorText(error));
-            }
-        });
-
-        ui.signOutBtn.addEventListener("click", async () => {
-            try {
-                await signOut();
-            } catch (error) {
-                setError(errorText(error));
-            }
-        });
-
-        ui.clearLogsBtn.addEventListener("click", resetTotalsAndLog);
-        ui.exportBtn.addEventListener("click", exportLogsToCsv);
+        ui.clearLogsBtn.addEventListener("click", resetAll);
+        $("exportBtn").addEventListener("click", exportLog);
+        $("exportTotalsBtn").addEventListener("click", exportTotals);
 
         async function searchUsers() {
-            try {
-                await loadDirectoryUsers();
-            } catch (error) {
-                setError(errorText(error));
-            }
+            try { await loadDirectoryUsers(); } catch (error) { setError(errorText(error)); }
         }
 
         ui.loadUsersBtn.addEventListener("click", searchUsers);
@@ -2009,7 +2639,7 @@
 
         ui.clearSelectedUsersBtn.addEventListener("click", () => {
             if (appState.selectedUsers.size === 0) return;
-            if (!window.confirm("Stop tracking everyone on the list? Their totals are kept.")) return;
+            if (!window.confirm("Stop tracking everyone? Their history is kept.")) return;
             appState.selectedUsers.clear();
             appState.selectedDetailUserId = null;
             saveConfig();
@@ -2024,20 +2654,33 @@
             appState.selectedDetailUserId = row.dataset.personId;
             renderPeopleList();
             renderPersonDetail();
+            tickLive();
         });
 
-        // Closing or reloading the page ends the monitored session: credit time
-        // up to now, then nothing more until the monitor is started again.
+        // When the tab comes back into view, check straight away if a check is overdue.
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible" && appState.timerId && Date.now() - (appState.lastPollAt || 0) > pollIntervalMs()) {
+                pollPresenceOnce();
+            }
+        });
+
+        // Closing or reloading ends the monitored session: credit up to now, then stop counting.
         window.addEventListener("pagehide", () => {
             if (appState.timerId) closeAllIntervals(Date.now());
             saveLogs();
             saveMonitorState();
         });
 
-        /* ---------- Boot ---------- */
+        // Keep "x min ago" labels and the now-line fresh.
+        setInterval(() => { if (!appState.polling) renderData(); }, 30000);
+
+        /* =========================================================
+           Boot
+           ========================================================= */
         loadConfig();
         loadLogs();
         loadMonitorState();
+        ui.periodControl.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.period === appState.period));
         setActiveView("dashboard");
         renderAll();
 
@@ -2050,7 +2693,7 @@
                 const redirectResult = await appState.msalInstance.handleRedirectPromise();
                 if (redirectResult && redirectResult.account) {
                     appState.account = redirectResult.account;
-                    renderHeader();
+                    renderData();
                 }
             } catch (error) {
                 setError(errorText(error));
