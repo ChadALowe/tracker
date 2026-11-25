@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TopRacer Presence Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --bg: #f3efe7;
+            --bg-accent: #fffaf0;
+            --ink: #1b242a;
+            --muted: #53666f;
+            --card: #fffcf5;
+            --line: #dccdb4;
+            --brand: #0068b8;
+            --brand-soft: #e7f3ff;
+            --warn: #9c5f00;
+            --good: #157d1f;
+            --bad: #b22a2f;
+            --shadow: 0 14px 34px rgba(27, 36, 42, 0.11);
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Space Grotesk", "Segoe UI", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(1000px 550px at 120% -10%, rgba(0, 104, 184, 0.18), transparent 62%),
+                radial-gradient(800px 450px at -10% 115%, rgba(21, 125, 31, 0.11), transparent 60%),
+                linear-gradient(180deg, var(--bg-accent), var(--bg));
+            padding: 16px;
+        }
+
+        .shell {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 14px;
+        }
+
+        .sidebar,
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .sidebar {
+            padding: 16px;
+            position: sticky;
+            top: 16px;
+            align-self: start;
+        }
+
+        .brand {
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed var(--line);
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 1.15rem;
+            letter-spacing: -0.02em;
+        }
+
+        .brand p {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 0.86rem;
+        }
+
+        .nav {
+            display: grid;
+            gap: 8px;
+        }
+
+        .nav button {
+            width: 100%;
+            text-align: left;
+            border-radius: 11px;
+            border: 1px solid var(--line);
+            background: #fff;
+            padding: 10px 12px;
+            font-family: inherit;
+            font-weight: 700;
+            color: var(--ink);
+            cursor: pointer;
+        }
+
+        .nav button.active {
+            border-color: #b8d7f2;
+            background: var(--brand-soft);
+            color: #0d4f86;
+        }
+
+        .small-note {
+            margin: 14px 0 0;
+            color: var(--muted);
+            font-size: 0.82rem;
+            line-height: 1.45;
+        }
+
+        .content {
+            display: grid;
+            gap: 14px;
+        }
+
+        .topbar {
+            display: grid;
+            gap: 10px;
+            padding: 16px;
+        }
+
+        .topbar-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title-block h2 {
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+
+        .title-block p {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        button,
+        input,
+        select {
+            font-family: inherit;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            background: #fff;
+            color: var(--ink);
+            padding: 10px 12px;
+            font-size: 0.93rem;
+        }
+
+        button {
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+        }
+
+        .btn-brand {
+            background: var(--brand);
+            border-color: var(--brand);
+            color: #fff;
+        }
+
+        .btn-soft {
+            background: #fff7e6;
+            color: #745200;
+            border-color: #e6cb8d;
+        }
+
+        .btn-danger {
+            background: #fff1f1;
+            color: var(--bad);
+            border-color: #ebc4c6;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px dashed var(--line);
+            background: #fffdf7;
+            color: var(--muted);
+            font-family: "IBM Plex Mono", monospace;
+            font-size: 0.84rem;
+        }
+
+        .error {
+            margin: 0;
+            color: var(--bad);
+            font-size: 0.9rem;
+        }
+
+        .view {
+            display: none;
+            gap: 14px;
+        }
+
+        .view.active {
+            display: grid;
+        }
+
+        .panel {
+            padding: 16px;
+        }
+
+        .panel h3 {
+            margin: 0 0 10px;
+            letter-spacing: -0.01em;
+        }
+
+        .kpi-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .kpi {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #fff;
+            padding: 12px;
+        }
+
+        .kpi-title {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 5px;
+        }
+
+        .kpi-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .table-wrap {
+            overflow: auto;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 860px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #efe5d6;
+            vertical-align: top;
+            font-size: 0.92rem;
+        }
+
+        th {
+            background: #fffaf0;
+            color: #3d4d54;
+        }
+
+        .pill {
+            display: inline-block;
+            border-radius: 999px;
+            padding: 3px 8px;
+            border: 1px solid #d6dde0;
+            background: #f9fbfc;
+            font-size: 0.8rem;
+            font-family: "IBM Plex Mono", monospace;
+        }
+
+        .ok {
+            border-color: #a5dba8;
+            color: var(--good);
+            background: #f1fff1;
+        }
+
+        .away {
+            border-color: #e9c07a;
+            color: var(--warn);
+            background: #fff8e8;
+        }
+
+        .mono {
+            font-family: "IBM Plex Mono", monospace;
+            background: #f8f4e9;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 2px 6px;
+            font-size: 0.84rem;
+        }
+
+        .user-meta {
+            color: var(--muted);
+            font-size: 0.82rem;
+            line-height: 1.35;
+        }
+
+        .people-layout {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: 1.2fr 1fr;
+        }
+
+        .people-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .person-row {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            align-items: center;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fff;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .person-row.active {
+            border-color: #b8d7f2;
+            background: var(--brand-soft);
+        }
+
+        .detail-grid {
+            display: grid;
+            gap: 9px;
+        }
+
+        .detail-item {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fff;
+            padding: 10px;
+        }
+
+        .settings-layout {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .field-grid {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .field {
+            display: grid;
+            gap: 5px;
+        }
+
+        .field label {
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .user-picker {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 12px;
+            background: #fffaf2;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .selected-users {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .chip {
+            display: inline-flex;
+            gap: 6px;
+            align-items: center;
+            border-radius: 999px;
+            border: 1px solid #cbdceb;
+            background: #f2f8ff;
+            padding: 5px 9px;
+            font-size: 0.82rem;
+        }
+
+        .user-grid {
+            margin-top: 10px;
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        }
+
+        .user-card {
+            display: grid;
+            gap: 4px;
+            border: 1px solid #ebddc8;
+            border-radius: 10px;
+            background: #fff;
+            padding: 10px;
+        }
+
+        .user-card label {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            cursor: pointer;
+        }
+
+        details {
+            border: 1px dashed var(--line);
+            border-radius: 10px;
+            padding: 10px 12px;
+            background: #fffcf6;
+        }
+
+        details summary {
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .steps {
+            margin: 8px 0 0;
+            padding-left: 18px;
+            display: grid;
+            gap: 6px;
+        }
+
+        @media (max-width: 1080px) {
+            .shell {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .people-layout,
+            .settings-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .field-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 680px) {
+            body {
+                padding: 10px;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <h1>Presence Admin</h1>
+                <p>TopRacer Team Ops</p>
+            </div>
+            <nav class="nav">
+                <button type="button" class="nav-btn active" data-view="dashboard">Dashboard</button>
+                <button type="button" class="nav-btn" data-view="people">Tracked People</button>
+                <button type="button" class="nav-btn" data-view="settings">Settings</button>
+            </nav>
+            <p class="small-note">Use Settings only when you need to manage app registration details, user tracking lists, or polling behavior.</p>
+        </aside>
+
+        <main class="content">
+            <section class="topbar panel">
+                <div class="topbar-row">
+                    <div class="title-block">
+                        <h2 id="viewTitle">Dashboard</h2>
+                        <p id="viewSubtitle">Live summary of who is available, away, and how time is distributed.</p>
+                    </div>
+                    <div class="controls">
+                        <button id="signInBtn" type="button" class="btn-brand">Sign In</button>
+                        <button id="startBtn" type="button">Start Monitor</button>
+                        <button id="stopBtn" type="button">Stop</button>
+                        <button id="signOutBtn" type="button" class="btn-danger">Sign Out</button>
+                    </div>
+                </div>
+                <div class="topbar-row">
+                    <div id="authState" class="status">Signed out</div>
+                    <button id="goToSettingsBtn" type="button" class="btn-soft">Open Settings</button>
+                </div>
+                <p id="errorState" class="error"></p>
+            </section>
+
+            <section id="view-dashboard" class="view active">
+                <section class="panel">
+                    <h3>Today At A Glance</h3>
+                    <div class="kpi-grid">
+                        <article class="kpi">
+                            <div class="kpi-title">Tracked People</div>
+                            <div id="kpiTracked" class="kpi-value">0</div>
+                        </article>
+                        <article class="kpi">
+                            <div class="kpi-title">Currently Available</div>
+                            <div id="kpiAvailable" class="kpi-value">0</div>
+                        </article>
+                        <article class="kpi">
+                            <div class="kpi-title">Currently Unavailable</div>
+                            <div id="kpiUnavailable" class="kpi-value">0</div>
+                        </article>
+                        <article class="kpi">
+                            <div class="kpi-title">Monitor Status</div>
+                            <div id="kpiMonitor" class="kpi-value">Idle</div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h3>Current Presence Snapshot</h3>
+                    <div class="table-wrap">
+                        <table id="snapshotTable">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Availability</th>
+                                    <th>Activity</th>
+                                    <th>Total Online</th>
+                                    <th>Total Available</th>
+                                    <th>Total Unavailable</th>
+                                    <th>Last Checked</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <div class="row" style="justify-content: space-between;">
+                        <h3 style="margin: 0;">Status Change Log</h3>
+                        <div class="row">
+                            <button id="exportBtn" type="button">Export CSV</button>
+                            <button id="clearLogsBtn" type="button" class="btn-danger">Clear Logs</button>
+                        </div>
+                    </div>
+                    <div class="table-wrap" style="margin-top: 10px;">
+                        <table id="logTable">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Activity</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+            </section>
+
+            <section id="view-people" class="view">
+                <section class="panel people-layout">
+                    <div>
+                        <h3>Tracked Team Members</h3>
+                        <p class="small-note" style="margin: 0 0 10px;">Click a person to view detailed timing and latest status.</p>
+                        <div id="trackedPeopleList" class="people-list"></div>
+                    </div>
+                    <div>
+                        <h3>Person Detail</h3>
+                        <div id="personDetail" class="detail-grid"></div>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h3>Time Totals</h3>
+                    <div class="table-wrap">
+                        <table id="totalsTable">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Total Online</th>
+                                    <th>Total Available</th>
+                                    <th>Total Unavailable</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <p class="small-note" style="margin-top: 10px;">Unavailable means any status other than Available. For Away, totals include an extra 5-minute offset to account for Teams inactivity auto-away delay. Total Available is calculated as Online minus Unavailable.</p>
+                </section>
+            </section>
+
+            <section id="view-settings" class="view">
+                <section class="panel settings-layout">
+                    <div>
+                        <h3>Connection & Monitoring</h3>
+                        <div class="field-grid">
+                            <div class="field">
+                                <label for="tenantId">Tenant ID</label>
+                                <input id="tenantId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+                            </div>
+                            <div class="field">
+                                <label for="clientId">Client ID</label>
+                                <input id="clientId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+                            </div>
+                            <div class="field">
+                                <label for="pollSeconds">Poll interval (seconds)</label>
+                                <select id="pollSeconds">
+                                    <option value="15">15</option>
+                                    <option value="30">30</option>
+                                    <option value="60" selected>60</option>
+                                    <option value="120">120</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Selected users</label>
+                                <div id="selectedCount" class="mono">0 selected</div>
+                            </div>
+                        </div>
+                        <div class="row" style="margin-top: 10px;">
+                            <button id="saveConfigBtn" type="button" class="btn-soft">Save Settings</button>
+                        </div>
+                        <input id="userIds" type="hidden" />
+                    </div>
+
+                    <div>
+                        <h3>App Setup Instructions</h3>
+                        <details>
+                            <summary>Show one-time app setup steps</summary>
+                            <ol class="steps">
+                                <li>In Microsoft Entra admin center, create an app registration.</li>
+                                <li>Add a redirect URI (SPA): <span class="mono" id="redirectHint"></span>.</li>
+                                <li>Add delegated permissions <span class="mono">Presence.Read.All</span> and <span class="mono">User.ReadBasic.All</span> for Microsoft Graph, then grant admin consent.</li>
+                                <li>Copy your Tenant ID and Client ID into the fields on this page.</li>
+                            </ol>
+                            <p class="small-note">For organization-wide monitoring and user lookup, Presence.Read.All and User.ReadBasic.All usually require admin consent.</p>
+                        </details>
+                    </div>
+                </section>
+
+                <section class="panel user-picker">
+                    <h3 style="margin-top: 0;">Manage Tracked People</h3>
+                    <div class="row">
+                        <input id="userSearch" placeholder="Search users by name or email" style="flex: 1; min-width: 230px;" />
+                        <button id="loadUsersBtn" type="button" class="btn-soft">Find People</button>
+                        <button id="clearSelectedUsersBtn" type="button">Clear Selected</button>
+                    </div>
+                    <p class="small-note" style="margin-top: 8px;">Select users below to track them. Changes are saved when you click Save Settings.</p>
+                    <div id="selectedUsers" class="selected-users"></div>
+                    <div id="userResults" class="user-grid"></div>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const STORAGE_KEY = "teamsPresenceMonitorConfig";
+        const LOG_KEY = "teamsPresenceLogs";
+        const STATE_KEY = "teamsPresenceMonitorState";
+        const AWAY_OFFSET_MS = 5 * 60 * 1000;
+
+        const appState = {
+            msalInstance: null,
+            account: null,
+            token: null,
+            timerId: null,
+            currentPresenceByUser: new Map(),
+            logs: [],
+            directoryUsers: [],
+            selectedUsers: new Map(),
+            unavailableTotalsMs: new Map(),
+            unavailableSinceMs: new Map(),
+            trackedSinceMs: new Map(),
+            activeView: "dashboard",
+            selectedDetailUserId: null
+        };
+
+        const ui = {
+            navButtons: Array.from(document.querySelectorAll(".nav-btn")),
+            views: {
+                dashboard: document.getElementById("view-dashboard"),
+                people: document.getElementById("view-people"),
+                settings: document.getElementById("view-settings")
+            },
+            viewTitle: document.getElementById("viewTitle"),
+            viewSubtitle: document.getElementById("viewSubtitle"),
+            goToSettingsBtn: document.getElementById("goToSettingsBtn"),
+            authState: document.getElementById("authState"),
+            errorState: document.getElementById("errorState"),
+            redirectHint: document.getElementById("redirectHint"),
+            tenantId: document.getElementById("tenantId"),
+            clientId: document.getElementById("clientId"),
+            userIds: document.getElementById("userIds"),
+            userSearch: document.getElementById("userSearch"),
+            loadUsersBtn: document.getElementById("loadUsersBtn"),
+            clearSelectedUsersBtn: document.getElementById("clearSelectedUsersBtn"),
+            userResults: document.getElementById("userResults"),
+            selectedUsers: document.getElementById("selectedUsers"),
+            selectedCount: document.getElementById("selectedCount"),
+            pollSeconds: document.getElementById("pollSeconds"),
+            saveConfigBtn: document.getElementById("saveConfigBtn"),
+            signInBtn: document.getElementById("signInBtn"),
+            startBtn: document.getElementById("startBtn"),
+            stopBtn: document.getElementById("stopBtn"),
+            signOutBtn: document.getElementById("signOutBtn"),
+            snapshotBody: document.querySelector("#snapshotTable tbody"),
+            totalsBody: document.querySelector("#totalsTable tbody"),
+            logBody: document.querySelector("#logTable tbody"),
+            exportBtn: document.getElementById("exportBtn"),
+            clearLogsBtn: document.getElementById("clearLogsBtn"),
+            kpiTracked: document.getElementById("kpiTracked"),
+            kpiAvailable: document.getElementById("kpiAvailable"),
+            kpiUnavailable: document.getElementById("kpiUnavailable"),
+            kpiMonitor: document.getElementById("kpiMonitor"),
+            trackedPeopleList: document.getElementById("trackedPeopleList"),
+            personDetail: document.getElementById("personDetail")
+        };
+
+        const VIEW_META = {
+            dashboard: {
+                title: "Dashboard",
+                subtitle: "Live summary of who is available, away, and how time is distributed."
+            },
+            people: {
+                title: "Tracked People",
+                subtitle: "Review each tracked person and drill into individual detail."
+            },
+            settings: {
+                title: "Settings",
+                subtitle: "Manage app connection, polling interval, and tracked people list."
+            }
+        };
+
+        ui.redirectHint.textContent = window.location.origin + window.location.pathname;
+
+        function setAuthState(message) {
+            ui.authState.textContent = message;
+        }
+
+        function setError(message) {
+            ui.errorState.textContent = message || "";
+            if (message) {
+                console.error(message);
+            }
+        }
+
+        function setActiveView(view) {
+            if (!ui.views[view]) {
+                return;
+            }
+
+            appState.activeView = view;
+            Object.entries(ui.views).forEach(([key, element]) => {
+                element.classList.toggle("active", key === view);
+            });
+
+            ui.navButtons.forEach((button) => {
+                button.classList.toggle("active", button.dataset.view === view);
+            });
+
+            ui.viewTitle.textContent = VIEW_META[view].title;
+            ui.viewSubtitle.textContent = VIEW_META[view].subtitle;
+        }
+
+        async function loadMsalLibrary() {
+            if (window.msal && window.msal.PublicClientApplication) {
+                return;
+            }
+
+            const urls = [
+                "https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.39.0/lib/msal-browser.min.js",
+                "https://unpkg.com/@azure/msal-browser@2.39.0/lib/msal-browser.min.js",
+                "https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js"
+            ];
+
+            let lastError = null;
+
+            for (const url of urls) {
+                try {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement("script");
+                        script.src = url;
+                        script.async = true;
+                        script.onload = () => resolve();
+                        script.onerror = () => reject(new Error(`Failed to load: ${url}`));
+                        document.head.appendChild(script);
+                    });
+
+                    if (window.msal && window.msal.PublicClientApplication) {
+                        return;
+                    }
+                } catch (error) {
+                    lastError = error;
+                }
+            }
+
+            throw lastError || new Error("Unable to load MSAL library from all known sources.");
+        }
+
+        function loadConfig() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) {
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(raw);
+                ui.tenantId.value = parsed.tenantId || "";
+                ui.clientId.value = parsed.clientId || "";
+                ui.userIds.value = parsed.userIds || "";
+                appState.selectedUsers = new Map();
+                (parsed.selectedUsers || []).forEach((user) => {
+                    if (user && user.id) {
+                        appState.selectedUsers.set(user.id, user);
+                    }
+                });
+                ui.pollSeconds.value = String(parsed.pollSeconds || 60);
+            } catch {
+                setAuthState("Config parse failed. Re-enter settings.");
+            }
+        }
+
+        function saveConfig() {
+            setError("");
+            const selectedUsers = Array.from(appState.selectedUsers.values());
+            const config = {
+                tenantId: ui.tenantId.value.trim(),
+                clientId: ui.clientId.value.trim(),
+                userIds: ui.userIds.value.trim(),
+                selectedUsers,
+                pollSeconds: Number(ui.pollSeconds.value)
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+            setAuthState("Settings saved locally.");
+        }
+
+        function loadLogs() {
+            const raw = localStorage.getItem(LOG_KEY);
+            if (!raw) {
+                return;
+            }
+
+            try {
+                appState.logs = JSON.parse(raw);
+            } catch {
+                appState.logs = [];
+            }
+        }
+
+        function saveLogs() {
+            localStorage.setItem(LOG_KEY, JSON.stringify(appState.logs));
+        }
+
+        function saveMonitorState() {
+            const state = {
+                currentPresence: Array.from(appState.currentPresenceByUser.values()),
+                unavailableTotalsMs: Object.fromEntries(appState.unavailableTotalsMs.entries()),
+                unavailableSinceMs: Object.fromEntries(appState.unavailableSinceMs.entries()),
+                trackedSinceMs: Object.fromEntries(appState.trackedSinceMs.entries()),
+                savedAt: Date.now()
+            };
+            localStorage.setItem(STATE_KEY, JSON.stringify(state));
+        }
+
+        function loadMonitorState() {
+            const raw = localStorage.getItem(STATE_KEY);
+            if (!raw) {
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(raw);
+                appState.currentPresenceByUser = new Map();
+                (parsed.currentPresence || []).forEach((entry) => {
+                    if (entry && entry.userId) {
+                        appState.currentPresenceByUser.set(entry.userId, entry);
+                    }
+                });
+
+                appState.unavailableTotalsMs = new Map();
+                Object.entries(parsed.unavailableTotalsMs || {}).forEach(([userId, totalMs]) => {
+                    appState.unavailableTotalsMs.set(userId, Number(totalMs) || 0);
+                });
+
+                appState.trackedSinceMs = new Map();
+                Object.entries(parsed.trackedSinceMs || {}).forEach(([userId, sinceMs]) => {
+                    const parsedSinceMs = Number(sinceMs);
+                    if (!Number.isFinite(parsedSinceMs) || parsedSinceMs <= 0) {
+                        return;
+                    }
+
+                    appState.trackedSinceMs.set(userId, parsedSinceMs);
+                });
+
+                appState.unavailableSinceMs = new Map();
+                Object.entries(parsed.unavailableSinceMs || {}).forEach(([userId, sinceMs]) => {
+                    const parsedSinceMs = Number(sinceMs);
+                    if (!Number.isFinite(parsedSinceMs) || parsedSinceMs <= 0) {
+                        return;
+                    }
+
+                    appState.unavailableSinceMs.set(userId, parsedSinceMs);
+                });
+            } catch {
+                setError("Saved monitor state could not be loaded. Starting with fresh totals.");
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        function userLabel(user) {
+            return user.displayName || user.userPrincipalName || user.mail || user.id;
+        }
+
+        function isAvailableStatus(availability) {
+            return String(availability || "").toLowerCase() === "available";
+        }
+
+        function isAwayStatus(availability) {
+            return String(availability || "").toLowerCase() === "away";
+        }
+
+        function isInactivityDrivenStatus(availability, activity) {
+            const normalizedAvailability = String(availability || "").toLowerCase();
+            const normalizedActivity = String(activity || "").toLowerCase();
+
+            return normalizedAvailability === "away" ||
+                normalizedAvailability.includes("idle") ||
+                normalizedActivity === "inactive";
+        }
+
+        function getUnavailableStartMs(availability, activity, nowMs) {
+            if (isInactivityDrivenStatus(availability, activity)) {
+                return nowMs - AWAY_OFFSET_MS;
+            }
+
+            return nowMs;
+        }
+
+        function formatDuration(ms) {
+            const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+        }
+
+        function getUnavailableTotalMs(userId, nowMs) {
+            const baseMs = appState.unavailableTotalsMs.get(userId) || 0;
+            const startMs = appState.unavailableSinceMs.get(userId);
+            if (!startMs) {
+                return baseMs;
+            }
+
+            return baseMs + Math.max(0, nowMs - startMs);
+        }
+
+        function getOnlineTotalMs(userId, nowMs) {
+            const startMs = appState.trackedSinceMs.get(userId);
+            if (!startMs) {
+                return 0;
+            }
+
+            return Math.max(0, nowMs - startMs);
+        }
+
+        function getAvailableTotalMs(userId, nowMs) {
+            const onlineMs = getOnlineTotalMs(userId, nowMs);
+            const unavailableMs = getUnavailableTotalMs(userId, nowMs);
+            return Math.max(0, onlineMs - unavailableMs);
+        }
+
+        function updateUnavailableTracking(userId, newAvailability, newActivity, nowMs) {
+            const previous = appState.currentPresenceByUser.get(userId);
+            const previousAvailability = previous ? previous.availability : null;
+
+            if (previousAvailability === null) {
+                if (!isAvailableStatus(newAvailability)) {
+                    appState.unavailableSinceMs.set(userId, getUnavailableStartMs(newAvailability, newActivity, nowMs));
+                }
+                return;
+            }
+
+            const wasAvailable = isAvailableStatus(previousAvailability);
+            const isNowAvailable = isAvailableStatus(newAvailability);
+
+            if (wasAvailable && !isNowAvailable) {
+                if (!appState.unavailableSinceMs.has(userId)) {
+                    appState.unavailableSinceMs.set(userId, getUnavailableStartMs(newAvailability, newActivity, nowMs));
+                }
+                return;
+            }
+
+            if (!wasAvailable && !isNowAvailable && !appState.unavailableSinceMs.has(userId)) {
+                appState.unavailableSinceMs.set(userId, getUnavailableStartMs(newAvailability, newActivity, nowMs));
+                return;
+            }
+
+            if (!wasAvailable && isNowAvailable) {
+                const startMs = appState.unavailableSinceMs.get(userId) || nowMs;
+                const elapsedMs = Math.max(0, nowMs - startMs);
+                const currentTotalMs = appState.unavailableTotalsMs.get(userId) || 0;
+                appState.unavailableTotalsMs.set(userId, currentTotalMs + elapsedMs);
+                appState.unavailableSinceMs.delete(userId);
+            }
+        }
+
+        function freezeUnavailableTotals(referenceMs = Date.now()) {
+            for (const [userId, startMs] of appState.unavailableSinceMs.entries()) {
+                const elapsedMs = Math.max(0, referenceMs - startMs);
+                const currentTotalMs = appState.unavailableTotalsMs.get(userId) || 0;
+                appState.unavailableTotalsMs.set(userId, currentTotalMs + elapsedMs);
+            }
+            appState.unavailableSinceMs.clear();
+            saveMonitorState();
+        }
+
+        function getMonitoredUsers() {
+            const selected = Array.from(appState.selectedUsers.values());
+            if (selected.length > 0) {
+                return selected;
+            }
+
+            return ui.userIds.value
+                .split(",")
+                .map((value) => value.trim())
+                .filter(Boolean)
+                .map((id) => ({ id, displayName: id }));
+        }
+
+        function badgeForAvailability(value) {
+            const isAvailable = value && value.toLowerCase() === "available";
+            const cls = isAvailable ? "pill ok" : "pill away";
+            return `<span class="${cls}">${value || "Unknown"}</span>`;
+        }
+
+        function renderDashboardCards() {
+            const users = getMonitoredUsers();
+            let availableCount = 0;
+
+            for (const user of users) {
+                const current = appState.currentPresenceByUser.get(user.id);
+                if (current && isAvailableStatus(current.availability)) {
+                    availableCount += 1;
+                }
+            }
+
+            const unavailableCount = Math.max(0, users.length - availableCount);
+            ui.kpiTracked.textContent = String(users.length);
+            ui.kpiAvailable.textContent = String(availableCount);
+            ui.kpiUnavailable.textContent = String(unavailableCount);
+            ui.kpiMonitor.textContent = appState.timerId ? "Running" : "Idle";
+        }
+
+        function renderSelectedUsers() {
+            const selected = Array.from(appState.selectedUsers.values());
+            ui.selectedCount.textContent = `${selected.length} selected`;
+            ui.userIds.value = selected.map((user) => user.id).join(",");
+
+            if (selected.length === 0) {
+                ui.selectedUsers.innerHTML = "<span class=\"small-note\" style=\"margin: 0;\">No users selected yet.</span>";
+            } else {
+                ui.selectedUsers.innerHTML = selected
+                    .map((user) => `<span class=\"chip\">${escapeHtml(userLabel(user))}</span>`)
+                    .join("");
+            }
+
+            renderTrackedPeopleList();
+            renderPersonDetail();
+            renderDashboardCards();
+        }
+
+        function renderDirectoryUsers() {
+            if (appState.directoryUsers.length === 0) {
+                ui.userResults.innerHTML = "<div class=\"small-note\" style=\"margin: 0;\">No users found. Try a different search.</div>";
+                return;
+            }
+
+            ui.userResults.innerHTML = appState.directoryUsers
+                .map((user) => {
+                    const checked = appState.selectedUsers.has(user.id) ? "checked" : "";
+                    return `
+                        <div class="user-card">
+                            <label>
+                                <input type="checkbox" data-user-id="${escapeHtml(user.id)}" ${checked} />
+                                <span>
+                                    <strong>${escapeHtml(userLabel(user))}</strong>
+                                    <div class="user-meta">${escapeHtml(user.mail || user.userPrincipalName || "No email")}</div>
+                                    <div class="user-meta">ID: ${escapeHtml(user.id)}</div>
+                                </span>
+                            </label>
+                        </div>
+                    `;
+                })
+                .join("");
+        }
+
+        function renderSnapshot() {
+            const nowMs = Date.now();
+            const rows = Array.from(appState.currentPresenceByUser.values())
+                .map((entry) => {
+                    const onlineMs = getOnlineTotalMs(entry.userId, nowMs);
+                    const availableMs = getAvailableTotalMs(entry.userId, nowMs);
+                    const unavailableMs = getUnavailableTotalMs(entry.userId, nowMs);
+                    return `
+                        <tr>
+                            <td><strong>${escapeHtml(entry.userLabel || entry.userId)}</strong><div class="user-meta">${escapeHtml(entry.userId)}</div></td>
+                            <td>${badgeForAvailability(entry.availability)}</td>
+                            <td>${escapeHtml(entry.activity || "-")}</td>
+                            <td><span class="mono">${formatDuration(onlineMs)}</span></td>
+                            <td><span class="mono">${formatDuration(availableMs)}</span></td>
+                            <td><span class="mono">${formatDuration(unavailableMs)}</span></td>
+                            <td>${new Date(entry.checkedAt).toLocaleString()}</td>
+                        </tr>
+                    `;
+                })
+                .join("");
+
+            ui.snapshotBody.innerHTML = rows || "<tr><td colspan=\"7\">No data yet.</td></tr>";
+        }
+
+        function renderTotals() {
+            const nowMs = Date.now();
+            const users = getMonitoredUsers();
+            const rows = users
+                .map((user) => {
+                    const onlineMs = getOnlineTotalMs(user.id, nowMs);
+                    const availableMs = getAvailableTotalMs(user.id, nowMs);
+                    const totalMs = getUnavailableTotalMs(user.id, nowMs);
+                    return `
+                        <tr>
+                            <td><strong>${escapeHtml(userLabel(user))}</strong><div class="user-meta">${escapeHtml(user.id)}</div></td>
+                            <td><span class="mono">${formatDuration(onlineMs)}</span></td>
+                            <td><span class="mono">${formatDuration(availableMs)}</span></td>
+                            <td><span class="mono">${formatDuration(totalMs)}</span></td>
+                        </tr>
+                    `;
+                })
+                .join("");
+
+            ui.totalsBody.innerHTML = rows || "<tr><td colspan=\"4\">No monitored users yet.</td></tr>";
+        }
+
+        function renderLogs() {
+            const rows = appState.logs
+                .slice()
+                .reverse()
+                .map((entry) => {
+                    return `
+                        <tr>
+                            <td>${new Date(entry.timestamp).toLocaleString()}</td>
+                            <td><strong>${escapeHtml(entry.userLabel || entry.userId)}</strong><div class="user-meta">${escapeHtml(entry.userId)}</div></td>
+                            <td>${escapeHtml(entry.fromAvailability || "-")}</td>
+                            <td>${escapeHtml(entry.toAvailability || "-")}</td>
+                            <td>${escapeHtml(entry.activity || "-")}</td>
+                        </tr>
+                    `;
+                })
+                .join("");
+
+            ui.logBody.innerHTML = rows || "<tr><td colspan=\"5\">No changes logged yet.</td></tr>";
+        }
+
+        function renderTrackedPeopleList() {
+            const users = getMonitoredUsers();
+            if (users.length === 0) {
+                ui.trackedPeopleList.innerHTML = "<div class=\"small-note\">No one is tracked yet. Open Settings to add people.</div>";
+                return;
+            }
+
+            if (!appState.selectedDetailUserId || !users.some((user) => user.id === appState.selectedDetailUserId)) {
+                appState.selectedDetailUserId = users[0].id;
+            }
+
+            ui.trackedPeopleList.innerHTML = users.map((user) => {
+                const current = appState.currentPresenceByUser.get(user.id);
+                const availability = current ? current.availability : "Unknown";
+                const rowClass = user.id === appState.selectedDetailUserId ? "person-row active" : "person-row";
+                return `
+                    <button type="button" class="${rowClass}" data-person-id="${escapeHtml(user.id)}">
+                        <span>
+                            <strong>${escapeHtml(userLabel(user))}</strong>
+                            <div class="user-meta">${escapeHtml(user.id)}</div>
+                        </span>
+                        ${badgeForAvailability(availability)}
+                    </button>
+                `;
+            }).join("");
+        }
+
+        function renderPersonDetail() {
+            const userId = appState.selectedDetailUserId;
+            if (!userId) {
+                ui.personDetail.innerHTML = "<div class=\"small-note\">Select a person to view detail.</div>";
+                return;
+            }
+
+            const user = appState.selectedUsers.get(userId) || { id: userId, displayName: userId };
+            const current = appState.currentPresenceByUser.get(userId);
+            const nowMs = Date.now();
+            const onlineMs = getOnlineTotalMs(userId, nowMs);
+            const availableMs = getAvailableTotalMs(userId, nowMs);
+            const unavailableMs = getUnavailableTotalMs(userId, nowMs);
+            const lastChange = appState.logs.slice().reverse().find((log) => log.userId === userId);
+
+            ui.personDetail.innerHTML = `
+                <div class="detail-item">
+                    <div class="user-meta">Person</div>
+                    <strong>${escapeHtml(userLabel(user))}</strong>
+                    <div class="user-meta">${escapeHtml(user.id)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="user-meta">Current Status</div>
+                    ${badgeForAvailability(current ? current.availability : "Unknown")}
+                    <div class="user-meta" style="margin-top: 6px;">${escapeHtml(current ? current.activity || "-" : "No activity yet")}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="user-meta">Total Online</div>
+                    <strong>${formatDuration(onlineMs)}</strong>
+                </div>
+                <div class="detail-item">
+                    <div class="user-meta">Total Available</div>
+                    <strong>${formatDuration(availableMs)}</strong>
+                </div>
+                <div class="detail-item">
+                    <div class="user-meta">Total Unavailable</div>
+                    <strong>${formatDuration(unavailableMs)}</strong>
+                </div>
+                <div class="detail-item">
+                    <div class="user-meta">Last Transition</div>
+                    <div>${lastChange ? `${escapeHtml(lastChange.fromAvailability || "-")} to ${escapeHtml(lastChange.toAvailability || "-")}` : "No transitions logged yet"}</div>
+                    <div class="user-meta" style="margin-top: 6px;">${lastChange ? new Date(lastChange.timestamp).toLocaleString() : "-"}</div>
+                </div>
+            `;
+        }
+
+        function renderAll() {
+            renderSelectedUsers();
+            renderDirectoryUsers();
+            renderSnapshot();
+            renderTotals();
+            renderLogs();
+            renderTrackedPeopleList();
+            renderPersonDetail();
+            renderDashboardCards();
+        }
+
+        async function initializeMsalFromInputs() {
+            setError("");
+            const tenantId = ui.tenantId.value.trim();
+            const clientId = ui.clientId.value.trim();
+
+            if (!tenantId || !clientId) {
+                throw new Error("Tenant ID and Client ID are required.");
+            }
+
+            await loadMsalLibrary();
+
+            if (!window.msal || !window.msal.PublicClientApplication) {
+                throw new Error("MSAL library did not load. Refresh the page and try again.");
+            }
+
+            appState.msalInstance = new msal.PublicClientApplication({
+                auth: {
+                    clientId,
+                    authority: `https://login.microsoftonline.com/${tenantId}`,
+                    redirectUri: window.location.origin + window.location.pathname
+                },
+                cache: {
+                    cacheLocation: "localStorage"
+                }
+            });
+
+            await appState.msalInstance.initialize();
+            const accounts = appState.msalInstance.getAllAccounts();
+            appState.account = accounts[0] || null;
+            if (appState.account) {
+                setAuthState(`Signed in as ${appState.account.username}`);
+            }
+        }
+
+        async function signIn() {
+            setError("");
+            if (!appState.msalInstance) {
+                await initializeMsalFromInputs();
+            }
+
+            const scopes = ["User.Read", "User.ReadBasic.All", "Presence.Read", "Presence.Read.All"];
+
+            try {
+                const loginResponse = await appState.msalInstance.loginPopup({ scopes });
+                appState.account = loginResponse.account;
+                setAuthState(`Signed in as ${appState.account.username}`);
+            } catch (error) {
+                const code = String(error && error.errorCode ? error.errorCode : "").toLowerCase();
+                const msg = String(error && error.message ? error.message : error);
+
+                if (code.includes("popup") || msg.toLowerCase().includes("popup")) {
+                    setAuthState("Popup blocked; switching to redirect sign-in...");
+                    await appState.msalInstance.loginRedirect({ scopes });
+                    return;
+                }
+
+                throw error;
+            }
+        }
+
+        async function getAccessToken(requestedScopes) {
+            if (!appState.msalInstance || !appState.account) {
+                throw new Error("Please sign in first.");
+            }
+
+            const scopes = requestedScopes || ["User.Read", "User.ReadBasic.All", "Presence.Read", "Presence.Read.All"];
+            const request = {
+                account: appState.account,
+                scopes
+            };
+
+            try {
+                const tokenResponse = await appState.msalInstance.acquireTokenSilent(request);
+                appState.token = tokenResponse.accessToken;
+                return appState.token;
+            } catch (error) {
+                const code = String(error && error.errorCode ? error.errorCode : "").toLowerCase();
+                const needsInteraction = code.includes("interaction") || code.includes("consent") || code.includes("login");
+
+                if (!needsInteraction) {
+                    throw error;
+                }
+
+                const tokenResponse = await appState.msalInstance.acquireTokenPopup(request);
+                appState.token = tokenResponse.accessToken;
+                return appState.token;
+            }
+        }
+
+        async function loadDirectoryUsers() {
+            setError("");
+            const token = await getAccessToken(["User.Read", "User.ReadBasic.All"]);
+            const term = ui.userSearch.value.trim();
+
+            let url = "https://graph.microsoft.com/v1.0/users?$select=id,displayName,mail,userPrincipalName&$top=30";
+            if (term) {
+                const safe = term.replaceAll("'", "''");
+                const filter = `startswith(displayName,'${safe}') or startswith(mail,'${safe}') or startswith(userPrincipalName,'${safe}')`;
+                url += `&$filter=${encodeURIComponent(filter)}`;
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    ConsistencyLevel: "eventual"
+                }
+            });
+
+            if (!response.ok) {
+                const body = await response.text();
+                throw new Error(`User lookup failed (${response.status}): ${body}`);
+            }
+
+            const result = await response.json();
+            appState.directoryUsers = (result.value || []).map((user) => ({
+                id: user.id,
+                displayName: user.displayName,
+                mail: user.mail,
+                userPrincipalName: user.userPrincipalName
+            }));
+            renderDirectoryUsers();
+            setAuthState(`Loaded ${appState.directoryUsers.length} users.`);
+        }
+
+        async function fetchPresenceForUser(userId) {
+            const token = await getAccessToken();
+            const response = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userId)}/presence`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                const body = await response.text();
+                throw new Error(`Presence fetch failed (${response.status}) for user ${userId}: ${body}`);
+            }
+
+            return response.json();
+        }
+
+        function isRelevantPresenceForLogs(availability, activity) {
+            return isInactivityDrivenStatus(availability, activity) || isAvailableStatus(availability);
+        }
+
+        function maybeLogTransition(user, newAvailability, activity) {
+            const userId = user.id;
+            const previous = appState.currentPresenceByUser.get(userId);
+            const previousAvailability = previous ? previous.availability : null;
+            const changed = previousAvailability !== null && previousAvailability !== newAvailability;
+
+            if (changed) {
+                const previousActivity = previous ? previous.activity : null;
+                const isRelevant = isRelevantPresenceForLogs(previousAvailability, previousActivity) ||
+                    isRelevantPresenceForLogs(newAvailability, activity);
+
+                if (isRelevant) {
+                    appState.logs.push({
+                        timestamp: new Date().toISOString(),
+                        userId,
+                        userLabel: userLabel(user),
+                        fromAvailability: previousAvailability,
+                        toAvailability: newAvailability,
+                        activity
+                    });
+                    saveLogs();
+                    renderLogs();
+                }
+            }
+        }
+
+        async function pollPresenceOnce() {
+            const users = getMonitoredUsers();
+            if (users.length === 0) {
+                setAuthState("Select at least one user to monitor.");
+                renderDashboardCards();
+                return;
+            }
+
+            for (const user of users) {
+                try {
+                    const userId = user.id;
+                    const presence = await fetchPresenceForUser(userId);
+                    const nowMs = Date.now();
+                    if (!appState.trackedSinceMs.has(userId)) {
+                        appState.trackedSinceMs.set(userId, nowMs);
+                    }
+                    updateUnavailableTracking(userId, presence.availability, presence.activity, nowMs);
+                    maybeLogTransition(user, presence.availability, presence.activity);
+                    appState.currentPresenceByUser.set(userId, {
+                        userId,
+                        userLabel: userLabel(user),
+                        availability: presence.availability,
+                        activity: presence.activity,
+                        checkedAt: nowMs
+                    });
+                } catch (error) {
+                    const userId = user.id;
+                    appState.currentPresenceByUser.set(userId, {
+                        userId,
+                        userLabel: userLabel(user),
+                        availability: "Error",
+                        activity: String(error.message || error),
+                        checkedAt: Date.now()
+                    });
+                }
+            }
+
+            renderSnapshot();
+            renderTotals();
+            renderTrackedPeopleList();
+            renderPersonDetail();
+            renderDashboardCards();
+            saveMonitorState();
+        }
+
+        async function startMonitoring() {
+            if (appState.timerId) {
+                clearInterval(appState.timerId);
+                appState.timerId = null;
+            }
+
+            await pollPresenceOnce();
+            const intervalMs = Number(ui.pollSeconds.value) * 1000;
+            appState.timerId = setInterval(pollPresenceOnce, intervalMs);
+            setAuthState(`Monitoring every ${ui.pollSeconds.value}s.`);
+            renderDashboardCards();
+        }
+
+        function stopMonitoring() {
+            freezeUnavailableTotals(Date.now());
+            if (appState.timerId) {
+                clearInterval(appState.timerId);
+                appState.timerId = null;
+            }
+            setAuthState("Monitoring stopped.");
+            renderSnapshot();
+            renderTotals();
+            renderTrackedPeopleList();
+            renderPersonDetail();
+            renderDashboardCards();
+        }
+
+        async function signOut() {
+            stopMonitoring();
+            if (appState.msalInstance && appState.account) {
+                await appState.msalInstance.logoutPopup({
+                    account: appState.account
+                });
+            }
+            appState.account = null;
+            appState.token = null;
+            setAuthState("Signed out");
+        }
+
+        function clearLogs() {
+            appState.logs = [];
+            appState.unavailableTotalsMs.clear();
+            appState.unavailableSinceMs.clear();
+            appState.trackedSinceMs.clear();
+            appState.currentPresenceByUser.clear();
+            saveLogs();
+            saveMonitorState();
+            renderLogs();
+            renderTotals();
+            renderSnapshot();
+            renderTrackedPeopleList();
+            renderPersonDetail();
+            renderDashboardCards();
+        }
+
+        function clearSelectedUsers() {
+            appState.selectedUsers.clear();
+            appState.selectedDetailUserId = null;
+            renderSelectedUsers();
+            renderDirectoryUsers();
+            renderTotals();
+            renderSnapshot();
+            renderTrackedPeopleList();
+            renderPersonDetail();
+            renderDashboardCards();
+        }
+
+        function exportLogsToCsv() {
+            if (appState.logs.length === 0) {
+                setAuthState("No logs to export.");
+                return;
+            }
+
+            const header = ["timestamp", "userId", "fromAvailability", "toAvailability", "activity"];
+            const lines = [header.join(",")];
+
+            for (const row of appState.logs) {
+                const values = [
+                    row.timestamp,
+                    row.userId,
+                    row.fromAvailability,
+                    row.toAvailability,
+                    row.activity
+                ].map((value) => `"${String(value ?? "").replaceAll('"', '""')}"`);
+
+                lines.push(values.join(","));
+            }
+
+            const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement("a");
+            anchor.href = url;
+            anchor.download = `teams-presence-log-${new Date().toISOString().slice(0, 19).replaceAll(":", "-")}.csv`;
+            anchor.click();
+            URL.revokeObjectURL(url);
+        }
+
+        ui.navButtons.forEach((button) => {
+            button.addEventListener("click", () => setActiveView(button.dataset.view));
+        });
+
+        ui.goToSettingsBtn.addEventListener("click", () => setActiveView("settings"));
+
+        ui.saveConfigBtn.addEventListener("click", saveConfig);
+        ui.signInBtn.addEventListener("click", async () => {
+            try {
+                await signIn();
+            } catch (error) {
+                const message = String(error && error.message ? error.message : error);
+                setAuthState("Sign-in failed.");
+                setError(message);
+            }
+        });
+        ui.startBtn.addEventListener("click", async () => {
+            try {
+                await startMonitoring();
+            } catch (error) {
+                setAuthState(String(error.message || error));
+            }
+        });
+        ui.stopBtn.addEventListener("click", stopMonitoring);
+        ui.signOutBtn.addEventListener("click", async () => {
+            try {
+                await signOut();
+            } catch (error) {
+                setAuthState(String(error.message || error));
+            }
+        });
+        ui.clearLogsBtn.addEventListener("click", clearLogs);
+        ui.exportBtn.addEventListener("click", exportLogsToCsv);
+        ui.loadUsersBtn.addEventListener("click", async () => {
+            try {
+                await loadDirectoryUsers();
+            } catch (error) {
+                setError(String(error && error.message ? error.message : error));
+            }
+        });
+        ui.clearSelectedUsersBtn.addEventListener("click", clearSelectedUsers);
+
+        ui.userSearch.addEventListener("keydown", async (event) => {
+            if (event.key !== "Enter") {
+                return;
+            }
+
+            event.preventDefault();
+            try {
+                await loadDirectoryUsers();
+            } catch (error) {
+                setError(String(error && error.message ? error.message : error));
+            }
+        });
+
+        ui.userResults.addEventListener("change", (event) => {
+            const target = event.target;
+            if (!target || target.type !== "checkbox" || !target.dataset.userId) {
+                return;
+            }
+
+            const user = appState.directoryUsers.find((entry) => entry.id === target.dataset.userId);
+            if (!user) {
+                return;
+            }
+
+            if (target.checked) {
+                appState.selectedUsers.set(user.id, user);
+            } else {
+                appState.selectedUsers.delete(user.id);
+            }
+
+            renderSelectedUsers();
+            renderTotals();
+            renderTrackedPeopleList();
+            renderPersonDetail();
+            renderDashboardCards();
+        });
+
+        ui.trackedPeopleList.addEventListener("click", (event) => {
+            const target = event.target.closest("[data-person-id]");
+            if (!target) {
+                return;
+            }
+
+            appState.selectedDetailUserId = target.dataset.personId;
+            renderTrackedPeopleList();
+            renderPersonDetail();
+        });
+
+        loadConfig();
+        loadLogs();
+        loadMonitorState();
+        setActiveView("dashboard");
+        renderAll();
+
+        window.addEventListener("beforeunload", () => {
+            freezeUnavailableTotals(Date.now());
+            saveLogs();
+            saveMonitorState();
+        });
+
+        (async () => {
+            try {
+                await loadMsalLibrary();
+            } catch (error) {
+                setError(String(error && error.message ? error.message : error));
+            }
+        })();
+
+        (async () => {
+            try {
+                if (!ui.tenantId.value.trim() || !ui.clientId.value.trim()) {
+                    return;
+                }
+
+                await initializeMsalFromInputs();
+                const redirectResult = await appState.msalInstance.handleRedirectPromise();
+                if (redirectResult && redirectResult.account) {
+                    appState.account = redirectResult.account;
+                    setAuthState(`Signed in as ${appState.account.username}`);
+                }
+            } catch (error) {
+                setError(String(error && error.message ? error.message : error));
+            }
+        })();
+    </script>
+</body>
+</html>
