@@ -365,7 +365,7 @@
         .eyebrow { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 800; }
 
         /* ---------- Setup ---------- */
-        .setup { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .setup { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 
         .step {
             border: 1px solid var(--line);
@@ -821,11 +821,33 @@
 
         .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+        /* ---------- Sign-in screen ---------- */
+        .login-screen { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 20px; background: var(--bg); }
+        .login-card { width: min(380px, 100%); display: grid; gap: 16px; }
+        .login-card h2 { margin: 0; font-family: var(--display, inherit); font-size: 1.5rem; }
+        .login-card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+        .login-error { color: var(--busy); font-size: 0.85rem; min-height: 1.2em; }
+
+        /* ---------- Tracking hours ---------- */
+        .schedule-status { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; padding: 14px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); margin-bottom: 18px; }
+        .schedule-status p { margin: 0; flex: 1; min-width: 220px; font-size: 0.9rem; color: var(--ink-2); }
+        .schedule-rows { display: grid; gap: 8px; max-width: 620px; }
+        .schedule-row { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 12px; align-items: center; }
+        .schedule-row label.day { display: flex; gap: 10px; align-items: center; font-weight: 700; cursor: pointer; }
+        .schedule-row input[type="checkbox"] { width: 18px; height: 18px; flex: none; accent-color: var(--accent); }
+        .schedule-row input[type="time"] { padding: 8px 10px; }
+        .schedule-row.off input[type="time"] { opacity: 0.4; }
+        .conn-list { display: grid; gap: 8px; margin-bottom: 16px; }
+        .conn-item { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); font-size: 0.88rem; }
+        .conn-item b { font-weight: 700; }
+        .conn-item .ok { color: var(--available); font-weight: 700; }
+        .conn-item .bad { color: var(--busy); font-weight: 700; text-align: right; }
+
         /* ---------- Responsive ---------- */
         @media (max-width: 1200px) {
             .hero { grid-template-columns: 1fr 1fr; }
             .main-grid { grid-template-columns: 1fr; }
-            .setup { grid-template-columns: 1fr 1fr; }
+            .setup { grid-template-columns: 1fr 1fr 1fr; }
             .detail-hero { grid-template-columns: auto 1fr; }
             .detail-hero > :last-child { grid-column: 1 / -1; }
         }
@@ -860,6 +882,8 @@
             .toolbar input { max-width: none; margin-left: 0 !important; }
             .ring-wrap.lg { width: 92px; height: 92px; }
             .live-btn .mono { display: none; }
+            .schedule-row { grid-template-columns: 1fr 1fr; }
+            .schedule-row label.day { grid-column: 1 / -1; }
         }
     </style>
 </head>
@@ -872,7 +896,7 @@
                 </div>
                 <div>
                     <div class="brand-name">Presence</div>
-                    <div class="brand-sub">Team availability, live</div>
+                    <div class="brand-sub">Team availability, tracked in the cloud</div>
                 </div>
             </div>
 
@@ -896,8 +920,6 @@
 
             <div class="top-actions">
                 <button id="themeBtn" type="button" class="icon-btn" aria-label="Switch theme"></button>
-                <button id="accountChip" type="button" class="account-chip hidden" data-goto="settings"></button>
-                <button id="signInBtn" type="button" class="btn btn-solid">Sign in</button>
                 <button id="monitorBtn" type="button" class="btn btn-accent"></button>
             </div>
         </div>
@@ -1068,14 +1090,14 @@
                 <section class="card">
                     <div class="card-head"><h3>The rules</h3></div>
                     <ol class="rule-list">
-                        <li><span><strong>Time only counts while the monitor is live.</strong> This page checks everyone's Teams status every <b id="ruleInterval">60 seconds</b>, in a single request. Keep the tab open — it can sit in the background. If it's closed, reloaded or stopped, nothing is counted until the monitor goes live again.</span></li>
+                        <li><span><strong>Time only counts during tracking hours.</strong> Your Cloudflare Worker checks everyone's Teams status every <b id="ruleInterval">minute</b>, in a single request, during the hours set in Settings (UK time). No browser needs to be open. Outside those hours, or when tracking is stopped for the day, nothing is counted.</span></li>
                         <li><span><strong>Each gap between checks takes the earlier status.</strong> If a check at 10:00 says Available and the next at 10:01 says Busy, that minute counts as Available. Totals can be out by up to one check interval per status change.</span></li>
-                        <li><span><strong>Long gaps are skipped.</strong> If more than <b id="ruleGap">3 minutes</b> passes between checks (computer asleep, network down), the gap isn't counted. The limit is 2× the check interval or 3 minutes, whichever is larger. Browsers slow background tabs to about one check a minute, which stays within this limit.</span></li>
+                        <li><span><strong>Long gaps are skipped.</strong> If more than <b id="ruleGap">3 minutes</b> passes between checks (a missed run, Microsoft not answering), the gap isn't counted. The limit is 2× the check interval or 3 minutes, whichever is larger.</span></li>
                         <li><span><strong>Offline isn't online.</strong> Time showing as Offline or Unknown is left out of every total.</span></li>
                         <li><span><strong>Only "Available" counts as available.</strong> Every other online status — Busy, In a call, Do not disturb, Be right back, Away, Available (idle) — counts as unavailable.</span></li>
                         <li><span><strong>The Away adjustment.</strong> Teams only marks someone Away after about 5 minutes of inactivity. When a person goes from Available straight to Away (or an idle/inactive status), the last 5 minutes of that Available stretch are re-labelled as unavailable. It never reaches back past the start of the stretch the monitor saw. On timelines this shows as a striped block.</span></li>
                         <li><span><strong>Failed checks aren't guessed.</strong> If a check for someone fails, nothing is counted for them until their next successful check.</span></li>
-                        <li><span><strong>Periods.</strong> <em>Today</em> runs from midnight on this computer's clock. <em>Last 7 days</em> is today plus the previous 6 days. <em>All time</em> is everything kept. Time crossing midnight is split between the two days. History older than 180 days is deleted automatically.</span></li>
+                        <li><span><strong>Periods.</strong> <em>Today</em> runs from midnight on the clock of the device you're viewing on. <em>Last 7 days</em> is today plus the previous 6 days. <em>All time</em> is everything kept. Time crossing midnight is split between the two days. History older than 180 days is deleted automatically.</span></li>
                     </ol>
                 </section>
 
@@ -1102,9 +1124,9 @@
                 <section class="card wide">
                     <div class="card-head"><h3>Worked example</h3></div>
                     <div class="example">
-                        <p>The monitor goes live at 09:00 and Sam is <b>Available</b>. Sam steps away at 09:15; Teams marks Sam <b>Away</b> at about 09:20 and the next check sees it. Sam is <b>Available</b> again from 09:30. The monitor is stopped at 10:00.</p>
+                        <p>Tracking starts at 09:00 and Sam is <b>Available</b>. Sam steps away at 09:15; Teams marks Sam <b>Away</b> at about 09:20 and the next check sees it. Sam is <b>Available</b> again from 09:30. Tracking ends at 10:00.</p>
                         <p><b>Online</b> 09:00–10:00 = <b>60 min</b> · <b>Unavailable</b> 09:20–09:30 (10 min) + 5-minute Away adjustment (09:15–09:20) = <b>15 min</b> · <b>Available</b> 60 − 15 = <b>45 min</b> (75%).</p>
-                        <div class="callout">If the page had been closed from 09:40 to 09:50, those 10 minutes would simply be missing — Online 50 min, Available 35 min — and on the timeline they'd show as an empty striped gap. Unmonitored time is never counted as Available.</div>
+                        <div class="callout">If checks had failed from 09:40 to 09:50, those 10 minutes would simply be missing — Online 50 min, Available 35 min — and on the timeline they'd show as an empty striped gap. Unmonitored time is never counted as Available.</div>
                     </div>
                 </section>
             </div>
@@ -1114,27 +1136,9 @@
         <section id="view-settings" class="view">
             <div class="settings-grid">
                 <section class="card">
-                    <div class="card-head"><h3>Account &amp; connection</h3></div>
-                    <div id="accountBox" class="account-box"></div>
+                    <div class="card-head"><h3>Connection</h3></div>
+                    <div id="connectionBox" class="conn-list"></div>
                     <div class="field-grid">
-                        <div class="field">
-                            <label for="tenantId">Tenant ID</label>
-                            <input id="tenantId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false" />
-                        </div>
-                        <div class="field">
-                            <label for="clientId">Client ID</label>
-                            <input id="clientId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false" />
-                        </div>
-                        <div class="field">
-                            <label for="pollSeconds">Check every</label>
-                            <select id="pollSeconds">
-                                <option value="15">15 seconds</option>
-                                <option value="30">30 seconds</option>
-                                <option value="60" selected>60 seconds</option>
-                                <option value="120">2 minutes</option>
-                            </select>
-                            <span class="hint">Shorter is more accurate. Everyone is checked in one request.</span>
-                        </div>
                         <div class="field">
                             <label>Theme</label>
                             <div class="segmented" id="themeSeg">
@@ -1144,27 +1148,41 @@
                         </div>
                     </div>
                     <div class="row" style="margin-top: 18px;">
-                        <button id="saveConfigBtn" type="button" class="btn btn-solid">Save settings</button>
+                        <button type="button" class="btn btn-sm" data-action="check-now">Check now</button>
+                        <button type="button" class="btn btn-sm" data-action="signout">Sign out of portal</button>
                     </div>
-                    <input id="userIds" type="hidden" />
                 </section>
 
                 <section class="card">
-                    <div class="card-head"><h3>One-time app setup</h3></div>
+                    <div class="card-head"><h3>One-time Microsoft setup</h3></div>
                     <ol class="steps">
-                        <li>In the Microsoft Entra admin center, create an app registration.</li>
-                        <li>Add a <b>Single-page application</b> redirect URI: <span class="code" id="redirectHint"></span></li>
-                        <li>Add delegated Microsoft Graph permissions <span class="code">Presence.Read.All</span> and <span class="code">User.ReadBasic.All</span>, then grant admin consent.</li>
-                        <li>Paste the Tenant ID and Client ID here and save.</li>
+                        <li>In the Microsoft Entra admin center, open your app registration (the existing one is fine).</li>
+                        <li>Under <b>Certificates &amp; secrets</b>, create a <b>client secret</b> and copy its <em>Value</em>.</li>
+                        <li>Under <b>API permissions</b>, add Microsoft Graph <b>Application</b> permissions <span class="code">Presence.Read.All</span> and <span class="code">User.Read.All</span>, then <b>Grant admin consent</b>.</li>
+                        <li>In Cloudflare, add Worker secrets <span class="code">AZURE_TENANT_ID</span>, <span class="code">AZURE_CLIENT_ID</span>, <span class="code">AZURE_CLIENT_SECRET</span> and <span class="code">PORTAL_PASSWORD</span>.</li>
                     </ol>
                 </section>
             </div>
+
+            <section class="card" id="scheduleCard">
+                <div class="card-head">
+                    <div>
+                        <h3>Tracking hours</h3>
+                        <p>The Worker checks everyone every minute between these times, in UK time. Outside them nothing is checked or counted.</p>
+                    </div>
+                </div>
+                <div id="liveStatus" class="schedule-status"></div>
+                <div id="scheduleRows" class="schedule-rows"></div>
+                <div class="row" style="margin-top: 18px;">
+                    <button id="saveScheduleBtn" type="button" class="btn btn-solid">Save hours</button>
+                </div>
+            </section>
 
             <section class="card" id="peopleManager">
                 <div class="card-head">
                     <div>
                         <h3>Tracked people <span id="selectedCount" class="pill" style="margin-left: 6px; vertical-align: middle;">0</span></h3>
-                        <p>Search your directory and tick people to track. Changes save instantly.</p>
+                        <p>Search your directory and tick people to track. Changes save instantly, for every device.</p>
                     </div>
                     <button id="clearSelectedUsersBtn" type="button" class="btn btn-sm btn-danger">Remove all</button>
                 </div>
@@ -1180,7 +1198,7 @@
                 <div class="card-head">
                     <div>
                         <h3>Data</h3>
-                        <p>Everything is stored only in this browser. Nothing is sent anywhere except to Microsoft.</p>
+                        <p>Stored in your Cloudflare D1 database and kept for 180 days.</p>
                     </div>
                 </div>
                 <div class="row">
@@ -1188,38 +1206,58 @@
                     <button type="button" class="btn" data-action="export-log">Export activity CSV</button>
                     <button id="clearLogsBtn" type="button" class="btn btn-danger">Reset all totals &amp; history</button>
                 </div>
+                <div id="importBox" class="paused hidden" style="margin-top: 16px;">
+                    <p><b>This browser still has history from the old version.</b> Copy it into the cloud so it shows up everywhere.</p>
+                    <button type="button" class="btn btn-sm btn-accent" data-action="import">Copy history to cloud</button>
+                    <button type="button" class="btn btn-sm" data-action="import-dismiss">Not now</button>
+                </div>
             </section>
         </section>
     </main>
+
+    <div id="loginScreen" class="login-screen hidden">
+        <form id="loginForm" class="card login-card">
+            <div class="brand">
+                <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>
+                <div><div class="brand-name">Presence</div></div>
+            </div>
+            <h2>Sign in</h2>
+            <p id="loginHint">Enter the portal password.</p>
+            <div class="field">
+                <label for="loginPassword">Password</label>
+                <input id="loginPassword" type="password" autocomplete="current-password" required />
+            </div>
+            <div id="loginError" class="login-error"></div>
+            <button id="loginBtn" type="submit" class="btn btn-accent">Sign in</button>
+        </form>
+    </div>
 
     <div id="tooltip" class="tooltip"></div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script>
-        const CONFIG_KEY = "teamsPresenceMonitorConfig";
-        const LOG_KEY = "teamsPresenceLogs";
-        const STATE_KEY = "presence.state.v3";
-        const LEGACY_STATE_KEY = "teamsPresenceMonitorState.v2";
+        // Keys used by the old browser-only version; read once to offer an import.
+        const LEGACY_CONFIG_KEY = "teamsPresenceMonitorConfig";
+        const LEGACY_LOG_KEY = "teamsPresenceLogs";
+        const LEGACY_STATE_KEY = "presence.state.v3";
+        const IMPORTED_KEY = "presence.imported";
+        const PREFS_KEY = "presence.prefs";
         const THEME_KEY = "presence.theme";
-        const AWAY_OFFSET_MS = 5 * 60 * 1000;
-        const MIN_GAP_LIMIT_MS = 3 * 60 * 1000;
         const DAY_MS = 24 * 60 * 60 * 1000;
         const KEEP_MS = 180 * DAY_MS;
-        const MAX_LOGS = 5000;
+        const SYNC_MS = 30000;
+        const OVERLAP_MS = 10 * 60 * 1000;
         const RING_C = 2 * Math.PI * 23;
-        const GRAPH_SCOPES = ["User.Read", "User.ReadBasic.All", "Presence.Read", "Presence.Read.All"];
-        const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const DAYS = [["mon", "Monday"], ["tue", "Tuesday"], ["wed", "Wednesday"], ["thu", "Thursday"], ["fri", "Friday"], ["sat", "Saturday"], ["sun", "Sunday"]];
 
         const appState = {
-            msalInstance: null,
-            account: null,
-            timerId: null,
-            tickId: null,
-            polling: false,
-            runningPollMs: null,
-            sessionStartedAt: null,
-            lastPollAt: null,
-            batchSupported: true,
+            server: null,          // latest status/schedule/connection from the Worker
+            rules: { pollMs: 60000, gapLimitMs: 180000 },
+            version: null,
+            lastSync: 0,
+            lastLogId: 0,
+            syncing: false,
+            scheduleDirty: false,
             logs: [],
             directoryUsers: [],
             selectedUsers: new Map(),
@@ -1242,7 +1280,7 @@
                 rules: $("view-rules"), settings: $("view-settings")
             },
             viewTitle: $("viewTitle"), viewSubtitle: $("viewSubtitle"), periodControl: $("periodControl"),
-            themeBtn: $("themeBtn"), accountChip: $("accountChip"), signInBtn: $("signInBtn"), monitorBtn: $("monitorBtn"),
+            themeBtn: $("themeBtn"), monitorBtn: $("monitorBtn"),
             errorBanner: $("errorBanner"), errorText: $("errorText"), toast: $("toast"), tooltip: $("tooltip"),
             setupArea: $("setupArea"), nowAvailable: $("nowAvailable"), nowTotal: $("nowTotal"),
             compoBar: $("compoBar"), compoLegend: $("compoLegend"), teamTimeline: $("teamTimeline"),
@@ -1251,24 +1289,23 @@
             trackedPeopleList: $("trackedPeopleList"), personDetail: $("personDetail"), totalsBody: $("totalsBody"),
             logBody: $("logBody"), logCount: $("logCount"), logPerson: $("logPerson"),
             ruleInterval: $("ruleInterval"), ruleGap: $("ruleGap"),
-            accountBox: $("accountBox"), tenantId: $("tenantId"), clientId: $("clientId"), pollSeconds: $("pollSeconds"),
-            saveConfigBtn: $("saveConfigBtn"), userIds: $("userIds"), redirectHint: $("redirectHint"),
+            connectionBox: $("connectionBox"), liveStatus: $("liveStatus"), scheduleRows: $("scheduleRows"), saveScheduleBtn: $("saveScheduleBtn"),
             selectedCount: $("selectedCount"), userSearch: $("userSearch"), loadUsersBtn: $("loadUsersBtn"),
             clearSelectedUsersBtn: $("clearSelectedUsersBtn"), selectedUsers: $("selectedUsers"), userResults: $("userResults"),
-            clearLogsBtn: $("clearLogsBtn")
+            clearLogsBtn: $("clearLogsBtn"), importBox: $("importBox"),
+            loginScreen: $("loginScreen"), loginForm: $("loginForm"), loginPassword: $("loginPassword"),
+            loginError: $("loginError"), loginHint: $("loginHint"), loginBtn: $("loginBtn")
         };
 
         const VIEW_META = {
             dashboard: { title: "Dashboard", subtitle: "Who's available now, and how everyone's day is going.", period: true },
             people: { title: "People", subtitle: "One person at a time: totals, their week and their day.", period: true },
-            log: { title: "Activity", subtitle: "Every status change the monitor has picked up.", period: false },
+            log: { title: "Activity", subtitle: "Every status change the tracker has picked up.", period: false },
             rules: { title: "How it's calculated", subtitle: "Exactly how Online, Available and Unavailable are worked out.", period: false },
-            settings: { title: "Settings", subtitle: "Connection, check interval, tracked people and your data.", period: false }
+            settings: { title: "Settings", subtitle: "Tracking hours, tracked people, connection and your data.", period: false }
         };
 
         const PERIOD_LABELS = { today: "Today", "7d": "Last 7 days", all: "All time" };
-
-        ui.redirectHint.textContent = window.location.origin + window.location.pathname;
 
         /* =========================================================
            Helpers
@@ -1426,8 +1463,9 @@
            and failed time never appear. Every total and timeline is
            worked out from these segments.
            ========================================================= */
-        function pollIntervalMs() { return appState.runningPollMs || Number(ui.pollSeconds.value) * 1000; }
-        function gapLimitMs() { return Math.max(2 * pollIntervalMs(), MIN_GAP_LIMIT_MS); }
+        function pollIntervalMs() { return appState.rules.pollMs; }
+        function gapLimitMs() { return appState.rules.gapLimitMs; }
+        function isLive() { return Boolean(appState.server && appState.server.status.live); }
 
         function newRecord(user) {
             return {
@@ -1436,77 +1474,10 @@
             };
         }
 
-        function getRecord(user) {
-            let rec = appState.records.get(user.id);
-            if (!rec) {
-                rec = newRecord(user);
-                appState.records.set(user.id, rec);
-            }
-            return rec;
-        }
-
-        function appendSegment(rec, s, e, st, adj = false) {
-            const last = rec.segments[rec.segments.length - 1];
-            if (last && last.e === s && last.st === st && Boolean(last.adj) === adj) {
-                last.e = e;
-            } else {
-                const seg = { s, e, st };
-                if (adj) seg.adj = true;
-                rec.segments.push(seg);
-            }
-        }
-
-        // Credit the time since the last check to the status seen at that check.
-        function closeInterval(rec, untilMs, keepOpen) {
-            if (rec.openSince) {
-                const elapsed = untilMs - rec.openSince;
-                if (elapsed > 0 && elapsed <= gapLimitMs() && isCountedStatus(rec.availability)) {
-                    appendSegment(rec, rec.openSince, untilMs, rec.availability);
-                }
-            }
-            rec.openSince = keepOpen ? untilMs : null;
-        }
-
-        function closeAllIntervals(untilMs) {
-            for (const rec of appState.records.values()) closeInterval(rec, untilMs, false);
-        }
-
-        // Re-label the last few minutes of an unbroken Available stretch ending at `atMs`.
-        function applyAwayAdjustment(rec, atMs) {
-            const segs = rec.segments;
-            let remaining = AWAY_OFFSET_MS;
-            let cursor = atMs;
-            let applied = 0;
-            let i = segs.length - 1;
-            while (remaining > 0 && i >= 0) {
-                const seg = segs[i];
-                if (seg.e !== cursor || !isAvailableStatus(seg.st) || seg.adj) break;
-                const take = Math.min(remaining, seg.e - seg.s);
-                const splitAt = seg.e - take;
-                const adjSeg = { s: splitAt, e: seg.e, st: "Away", adj: true };
-                if (splitAt === seg.s) {
-                    segs.splice(i, 1, adjSeg);
-                } else {
-                    seg.e = splitAt;
-                    segs.splice(i + 1, 0, adjSeg);
-                }
-                remaining -= take;
-                applied += take;
-                cursor = splitAt;
-                i -= 1;
-            }
-            for (let j = segs.length - 1; j > 0; j -= 1) {
-                const a = segs[j - 1], b = segs[j];
-                if (a.adj && b.adj && a.e === b.s) {
-                    a.e = b.e;
-                    segs.splice(j, 1);
-                }
-            }
-            return applied;
-        }
-
+        // The Worker saves time up to its last check; between checks the page
+        // extends the current status up to "now" so the numbers keep ticking.
         function pendingSegment(rec, nowMs) {
-            if (!appState.timerId || !rec.openSince || !isCountedStatus(rec.availability)) return null;
+            if (!isLive() || !rec.openSince || !isCountedStatus(rec.availability)) return null;
             const elapsed = nowMs - rec.openSince;
             if (elapsed <= 0 || elapsed > gapLimitMs()) return null;
             return { s: rec.openSince, e: nowMs, st: rec.availability, live: true };
@@ -1558,138 +1529,25 @@
             return totalsBetween(userId, r.from, r.to, nowMs);
         }
 
-        function applyPresence(user, presence, nowMs) {
-            const rec = getRecord(user);
-            closeInterval(rec, nowMs, true);
-
-            const prevAv = rec.availability;
-            const newAv = presence.availability || "PresenceUnknown";
-            const newAct = presence.activity || "";
-
-            if (prevAv && !isErrorStatus(prevAv) && prevAv !== newAv) {
-                appState.logs.push({
-                    timestamp: new Date(nowMs).toISOString(), userId: user.id, userLabel: userLabel(user),
-                    fromAvailability: prevAv, toAvailability: newAv, activity: newAct
-                });
-            }
-
-            if (isAvailableStatus(prevAv) && !isAvailableStatus(newAv) && isCountedStatus(newAv) && isInactivityDrivenStatus(newAv, newAct)) {
-                applyAwayAdjustment(rec, nowMs);
-            }
-
-            rec.userLabel = userLabel(user);
-            rec.availability = newAv;
-            rec.activity = newAct;
-            rec.checkedAt = nowMs;
-            if (!rec.firstSeenAt) rec.firstSeenAt = nowMs;
-        }
-
-        function applyError(user, message, nowMs) {
-            const rec = getRecord(user);
-            closeInterval(rec, nowMs, false);
-            rec.userLabel = userLabel(user);
-            rec.availability = "Error";
-            rec.activity = message;
-            rec.checkedAt = nowMs;
-        }
-
         /* =========================================================
-           Persistence
+           Preferences (this device only)
            ========================================================= */
-        function loadConfig() {
-            const raw = storeGet(CONFIG_KEY);
-            if (!raw) return;
+        function loadPrefs() {
             try {
-                const parsed = JSON.parse(raw);
-                ui.tenantId.value = parsed.tenantId || "";
-                ui.clientId.value = parsed.clientId || "";
-                ui.userIds.value = parsed.userIds || "";
-                appState.selectedUsers = new Map();
-                (parsed.selectedUsers || []).forEach((u) => { if (u && u.id) appState.selectedUsers.set(u.id, u); });
-                ui.pollSeconds.value = String(parsed.pollSeconds || 60);
+                const parsed = JSON.parse(storeGet(PREFS_KEY) || "{}");
                 if (parsed.period && PERIOD_LABELS[parsed.period]) appState.period = parsed.period;
-            } catch {
-                setError("Saved settings couldn't be read. Please re-enter them.");
-            }
+            } catch { /* ignore */ }
         }
 
-        function hasSavedConnection() {
-            try {
-                const parsed = JSON.parse(storeGet(CONFIG_KEY) || "{}");
-                return Boolean(parsed.tenantId && parsed.clientId);
-            } catch { return false; }
-        }
-
-        function saveConfig() {
-            storeSet(CONFIG_KEY, JSON.stringify({
-                tenantId: ui.tenantId.value.trim(),
-                clientId: ui.clientId.value.trim(),
-                userIds: ui.userIds.value.trim(),
-                selectedUsers: Array.from(appState.selectedUsers.values()),
-                pollSeconds: Number(ui.pollSeconds.value),
-                period: appState.period
-            }));
-        }
-
-        function loadLogs() {
-            try {
-                const parsed = JSON.parse(storeGet(LOG_KEY) || "[]");
-                appState.logs = Array.isArray(parsed) ? parsed : [];
-            } catch { appState.logs = []; }
-        }
-
-        function saveLogs() {
-            if (appState.logs.length > MAX_LOGS) appState.logs = appState.logs.slice(-MAX_LOGS);
-            storeSet(LOG_KEY, JSON.stringify(appState.logs));
-        }
-
-        function saveMonitorState() {
-            const cutoff = Date.now() - KEEP_MS;
-            for (const rec of appState.records.values()) {
-                if (rec.segments.length && rec.segments[0].e < cutoff) {
-                    rec.segments = rec.segments.filter((s) => s.e >= cutoff);
-                }
-            }
-            storeSet(STATE_KEY, JSON.stringify({ version: 3, records: Array.from(appState.records.values()), savedAt: Date.now() }));
-        }
-
-        function loadMonitorState() {
-            let raw = storeGet(STATE_KEY);
-            let legacy = false;
-            if (!raw) {
-                raw = storeGet(LEGACY_STATE_KEY);
-                legacy = Boolean(raw);
-            }
-            if (!raw) return;
-            try {
-                const parsed = JSON.parse(raw);
-                appState.records = new Map();
-                (parsed.records || []).forEach((r) => {
-                    if (!r || !r.userId) return;
-                    appState.records.set(r.userId, {
-                        ...newRecord({ id: r.userId }),
-                        userLabel: r.userLabel || r.userId,
-                        availability: r.availability || null,
-                        activity: r.activity || null,
-                        checkedAt: r.checkedAt || null,
-                        firstSeenAt: r.firstSeenAt || null,
-                        // Older versions stored totals only, which can't be split by day.
-                        segments: legacy || !Array.isArray(r.segments) ? [] : r.segments.filter((s) => s && s.e > s.s),
-                        openSince: null // the monitor never survives a reload
-                    });
-                });
-            } catch {
-                setError("Saved history couldn't be read, so totals start from zero.");
-            }
+        function savePrefs() {
+            storeSet(PREFS_KEY, JSON.stringify({ period: appState.period }));
         }
 
         /* =========================================================
            Users & filtering
            ========================================================= */
         function getMonitoredUsers() {
-            const selected = Array.from(appState.selectedUsers.values());
-            if (selected.length > 0) return selected;
-            return ui.userIds.value.split(",").map((v) => v.trim()).filter(Boolean).map((id) => ({ id, displayName: id }));
+            return Array.from(appState.selectedUsers.values());
         }
 
         function currentAv(userId) {
@@ -1743,9 +1601,34 @@
             return `<div class="bar ${t.online ? "" : "empty"}"><div class="bar-fill" data-live="bar" data-uid="${escapeHtml(userId)}" style="width:${t.pct.toFixed(1)}%"></div></div>`;
         }
 
+        function fmtNext(ms) {
+            if (!ms) return "";
+            const d = new Date(ms);
+            const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            const today = startOfDay(Date.now());
+            const day = startOfDay(ms);
+            if (day === today) return time;
+            if (day === startOfDay(Date.now(), -1)) return `tomorrow ${time}`;
+            return `${d.toLocaleDateString([], { weekday: "short" })} ${time}`;
+        }
+
+        function connectionOk() {
+            const c = appState.server && appState.server.connection;
+            return Boolean(c && c.tenantId && c.clientId && c.clientSecret);
+        }
+
+        // One sentence describing whether the Worker is tracking, and until when.
+        function statusText() {
+            if (!appState.server) return "Loading…";
+            const st = appState.server.status;
+            if (st.reason === "schedule") return `<b>Tracking now</b> — until ${escapeHtml(fmtNext(st.until))}, on schedule.`;
+            if (st.reason === "manual") return `<b>Tracking now</b> — started by hand, runs until ${escapeHtml(fmtNext(st.until))}.`;
+            if (st.reason === "paused") return `<b>Stopped for today.</b> Back on schedule${st.nextStart ? ` ${escapeHtml(fmtNext(st.nextStart))}` : " tomorrow"}.`;
+            return `<b>Outside tracking hours.</b>${st.nextStart ? ` Next check starts ${escapeHtml(fmtNext(st.nextStart))}.` : " No tracking hours are set."}`;
+        }
+
         function renderTopbar() {
-            const running = Boolean(appState.timerId);
-            const signedIn = Boolean(appState.account);
+            const live = isLive();
             const theme = document.documentElement.dataset.theme;
 
             ui.themeBtn.innerHTML = theme === "dark"
@@ -1753,53 +1636,46 @@
                 : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>`;
             document.querySelectorAll("[data-theme-set]").forEach((b) => b.classList.toggle("active", b.dataset.themeSet === theme));
 
-            ui.signInBtn.classList.toggle("hidden", signedIn);
-            ui.accountChip.classList.toggle("hidden", !signedIn);
-            if (signedIn) {
-                const name = appState.account.name || appState.account.username;
-                ui.accountChip.innerHTML = `${avatar(appState.account.username, name)}<span>${escapeHtml(name)}</span>`;
-                ui.accountChip.title = appState.account.username;
-            }
-
-            if (running) {
+            ui.monitorBtn.disabled = !appState.server;
+            if (live) {
+                const since = appState.server.status.liveSince;
                 ui.monitorBtn.className = "btn live-btn";
-                ui.monitorBtn.innerHTML = `<span class="live-dot"></span><span>Live</span><span class="mono small" data-live-session>${fmtClock(Date.now() - appState.sessionStartedAt)}</span><span class="stop">Stop</span>`;
-                ui.monitorBtn.title = "Stop monitoring";
+                ui.monitorBtn.innerHTML = `<span class="live-dot"></span><span>Live</span><span class="mono small" data-live-session>${since ? fmtClock(Date.now() - since) : ""}</span><span class="stop">Stop</span>`;
+                ui.monitorBtn.title = "Stop tracking for the rest of today";
             } else {
                 ui.monitorBtn.className = "btn btn-accent";
-                ui.monitorBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span>Go live</span>`;
-                ui.monitorBtn.title = "Start monitoring";
+                ui.monitorBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span>Start now</span>`;
+                ui.monitorBtn.title = "Start tracking now, outside the usual hours";
             }
-
-            ui.accountBox.innerHTML = signedIn
-                ? `${avatar(appState.account.username, appState.account.name || appState.account.username)}<div><strong>${escapeHtml(appState.account.name || appState.account.username)}</strong><div class="muted small">${escapeHtml(appState.account.username)}</div></div><button type="button" class="btn btn-sm" data-action="signout">Sign out</button>`
-                : `<span class="avatar" style="--h:220">?</span><div><strong>Not signed in</strong><div class="muted small">Save your app details below, then sign in with Microsoft.</div></div><button type="button" class="btn btn-sm btn-solid" data-action="signin">Sign in</button>`;
         }
 
         function renderSetup() {
             const users = getMonitoredUsers();
-            const running = Boolean(appState.timerId);
+            const st = appState.server && appState.server.status;
             const steps = [
-                { done: hasSavedConnection(), title: "Connect your app", text: "Paste your Entra Tenant ID and Client ID.", btn: "Open settings", action: "goto-settings" },
-                { done: Boolean(appState.account), title: "Sign in", text: "Use a Microsoft account in that tenant.", btn: "Sign in", action: "signin" },
+                { done: connectionOk(), title: "Connect Microsoft", text: "Add the app's secrets to the Cloudflare Worker.", btn: "How to", action: "goto-settings" },
                 { done: users.length > 0, title: "Choose people", text: "Pick who to track from your directory.", btn: "Add people", action: "goto-people" },
-                { done: running, title: "Go live", text: "Keep this tab open while it runs.", btn: "Go live", action: "start" }
+                { done: Boolean(st && (st.lastPollAt || st.live)), title: "Set your hours", text: "The Worker tracks on its own during them.", btn: "Tracking hours", action: "goto-hours" }
             ];
             const firstOpen = steps.findIndex((s) => !s.done);
+            const problem = st && st.lastError && st.lastPollAt && st.lastError.at >= st.lastPollAt ? st.lastError.message : "";
 
-            if (firstOpen === -1) {
+            if (!appState.server) {
                 ui.setupArea.innerHTML = "";
-            } else if (firstOpen === 3) {
-                ui.setupArea.innerHTML = `
+            } else if (firstOpen === -1 || (firstOpen === 2 && steps[0].done && steps[1].done)) {
+                const note = problem
+                    ? `<div class="paused" style="border-color: color-mix(in srgb, var(--busy) 40%, transparent);"><span class="live-dot" style="background: var(--busy); animation: none;"></span><p><b>The last check had a problem:</b> ${escapeHtml(problem)}</p><button type="button" class="btn btn-sm" data-action="check-now">Try again</button></div>`
+                    : "";
+                ui.setupArea.innerHTML = note + (isLive() ? "" : `
                     <div class="paused">
                         <span class="live-dot" style="background: var(--offline); animation: none;"></span>
-                        <p><b>Monitor is paused.</b> Totals and timelines only grow while it's live${appState.lastPollAt ? ` — last check ${escapeHtml(timeAgo(appState.lastPollAt))}` : ""}.</p>
-                        <button type="button" class="btn btn-accent btn-sm" data-action="start">Go live</button>
-                    </div>`;
+                        <p>${statusText()}${st.lastPollAt ? ` Last check ${escapeHtml(timeAgo(st.lastPollAt))}.` : ""}</p>
+                        <button type="button" class="btn btn-accent btn-sm" data-action="start">Start now</button>
+                    </div>`);
             } else {
                 ui.setupArea.innerHTML = `
                     <section class="card">
-                        <div class="card-head"><div><h3>Get set up</h3><p>Four quick steps and the dashboard comes alive.</p></div></div>
+                        <div class="card-head"><div><h3>Get set up</h3><p>Three steps and the Worker takes it from there — no tab needs to stay open.</p></div></div>
                         <div class="setup">
                             ${steps.map((s, i) => `
                                 <div class="step${s.done ? " done" : ""}">
@@ -1905,7 +1781,7 @@
             document.querySelectorAll("[data-day-nav]").forEach((el) => { el.innerHTML = dayNavHtml(); });
             const users = visibleUsers(nowMs);
             if (getMonitoredUsers().length === 0) {
-                ui.teamTimeline.innerHTML = `<div class="empty-state"><strong>Nothing to draw yet</strong>Add people and go live — each person gets a bar showing their day.</div>`;
+                ui.teamTimeline.innerHTML = `<div class="empty-state"><strong>Nothing to draw yet</strong>Add people — during tracking hours each person gets a bar showing their day.</div>`;
                 return;
             }
             if (users.length === 0) {
@@ -1982,7 +1858,7 @@
             const recent = appState.logs.slice(-9).reverse();
             ui.recentFeed.innerHTML = recent.length
                 ? recent.map((e) => feedItem(e)).join("")
-                : `<div class="empty-state"><strong>Quiet so far</strong>Status changes stream in here once the monitor is live.</div>`;
+                : `<div class="empty-state"><strong>Quiet so far</strong>Status changes appear here during tracking hours.</div>`;
         }
 
         /* ---------- People view ---------- */
@@ -2113,7 +1989,6 @@
         function renderSelectedUsers() {
             const selected = Array.from(appState.selectedUsers.values());
             ui.selectedCount.textContent = selected.length;
-            ui.userIds.value = selected.map((u) => u.id).join(",");
             ui.selectedUsers.innerHTML = selected.length
                 ? selected.map((u) => `<span class="chip">${avatar(u.id, userLabel(u))}${escapeHtml(userLabel(u))}<button type="button" data-remove-id="${escapeHtml(u.id)}" aria-label="Stop tracking ${escapeHtml(userLabel(u))}">×</button></span>`).join("")
                 : `<span class="muted small">No one selected yet.</span>`;
@@ -2133,8 +2008,67 @@
 
         function renderRules() {
             const secs = Math.round(pollIntervalMs() / 1000);
-            ui.ruleInterval.textContent = secs >= 120 ? `${secs / 60} minutes` : `${secs} seconds`;
+            ui.ruleInterval.textContent = secs === 60 ? "minute" : secs >= 120 ? `${secs / 60} minutes` : `${secs} seconds`;
             ui.ruleGap.textContent = `${Math.round(gapLimitMs() / 60000)} minutes`;
+        }
+
+        function renderConnection() {
+            const server = appState.server;
+            if (!server) { ui.connectionBox.innerHTML = ""; return; }
+            const c = server.connection;
+            const st = server.status;
+            const item = (label, ok, okText, badText) => `<div class="conn-item"><span>${label}</span><span class="${ok ? "ok" : "bad"}">${escapeHtml(ok ? okText : badText)}</span></div>`;
+            ui.connectionBox.innerHTML = [
+                item("Tenant ID", c.tenantId, "Set", "Missing — add AZURE_TENANT_ID"),
+                item("Client ID", c.clientId, "Set", "Missing — add AZURE_CLIENT_ID"),
+                item("Client secret", c.clientSecret, "Set", "Missing — add AZURE_CLIENT_SECRET"),
+                `<div class="conn-item"><span>Last check</span><b>${escapeHtml(st.lastPollAt ? `${fmtWhen(st.lastPollAt)} (${timeAgo(st.lastPollAt)})` : "Not yet")}</b></div>`,
+                st.lastError && st.lastPollAt && st.lastError.at >= st.lastPollAt
+                    ? `<div class="conn-item"><span>Problem</span><span class="bad">${escapeHtml(st.lastError.message)}</span></div>` : ""
+            ].join("");
+        }
+
+        function renderLiveStatus() {
+            const server = appState.server;
+            if (!server) { ui.liveStatus.innerHTML = statusText(); return; }
+            const live = isLive();
+            const hasOverride = Boolean(server.override);
+            ui.liveStatus.innerHTML = `
+                <span class="live-dot" style="${live ? "" : "background: var(--offline); animation: none;"}"></span>
+                <p>${statusText()}</p>
+                ${live ? `<button type="button" class="btn btn-sm" data-action="stop">Stop for today</button>` : `<button type="button" class="btn btn-sm btn-accent" data-action="start">Start now</button>`}
+                ${hasOverride ? `<button type="button" class="btn btn-sm" data-action="auto">Back to schedule</button>` : ""}`;
+        }
+
+        function renderSchedule(force = false) {
+            if (!appState.server) return;
+            if (appState.scheduleDirty && !force) return; // don't overwrite edits in progress
+            const days = appState.server.schedule.days;
+            ui.scheduleRows.innerHTML = DAYS.map(([key, label]) => {
+                const d = days[key];
+                return `
+                    <div class="schedule-row${d.on ? "" : " off"}" data-day-row="${key}">
+                        <label class="day"><input type="checkbox" data-sched="on" ${d.on ? "checked" : ""} />${label}</label>
+                        <input type="time" data-sched="start" value="${escapeHtml(d.start)}" aria-label="${label} start" ${d.on ? "" : "disabled"} />
+                        <input type="time" data-sched="end" value="${escapeHtml(d.end)}" aria-label="${label} end" ${d.on ? "" : "disabled"} />
+                    </div>`;
+            }).join("");
+        }
+
+        function readScheduleForm() {
+            const days = {};
+            ui.scheduleRows.querySelectorAll("[data-day-row]").forEach((row) => {
+                days[row.dataset.dayRow] = {
+                    on: row.querySelector('[data-sched="on"]').checked,
+                    start: row.querySelector('[data-sched="start"]').value,
+                    end: row.querySelector('[data-sched="end"]').value
+                };
+            });
+            return { timezone: appState.server.schedule.timezone, days };
+        }
+
+        function renderImportBox() {
+            ui.importBox.classList.toggle("hidden", !legacyData());
         }
 
         function renderData() {
@@ -2150,6 +2084,8 @@
             renderPersonDetail(now);
             renderTotals(now);
             renderLog();
+            renderConnection();
+            renderLiveStatus();
             tickLive();
         }
 
@@ -2157,6 +2093,8 @@
             renderSelectedUsers();
             renderDirectoryUsers();
             renderRules();
+            renderSchedule();
+            renderImportBox();
             renderData();
         }
 
@@ -2184,7 +2122,8 @@
                 }
             });
             const session = document.querySelector("[data-live-session]");
-            if (session && appState.sessionStartedAt) session.textContent = fmtClock(now - appState.sessionStartedAt);
+            const since = appState.server && appState.server.status.liveSince;
+            if (session && since) session.textContent = fmtClock(now - since);
         }
 
         function setActiveView(view) {
@@ -2205,115 +2144,138 @@
         }
 
         /* =========================================================
-           Microsoft sign-in
+           Talking to the Worker
            ========================================================= */
-        async function loadMsalLibrary() {
-            if (window.msal && window.msal.PublicClientApplication) return;
-            const urls = [
-                "https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.39.0/lib/msal-browser.min.js",
-                "https://unpkg.com/@azure/msal-browser@2.39.0/lib/msal-browser.min.js",
-                "https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js"
-            ];
-            let lastError = null;
-            for (const url of urls) {
-                try {
-                    await new Promise((resolve, reject) => {
-                        const script = document.createElement("script");
-                        script.src = url;
-                        script.async = true;
-                        script.onload = () => resolve();
-                        script.onerror = () => reject(new Error(`Failed to load: ${url}`));
-                        document.head.appendChild(script);
-                    });
-                    if (window.msal && window.msal.PublicClientApplication) return;
-                } catch (error) {
-                    lastError = error;
+        class AuthError extends Error {}
+
+        async function api(path, { method = "GET", body } = {}) {
+            const init = { method, credentials: "same-origin", headers: {} };
+            if (body !== undefined) {
+                init.headers["Content-Type"] = "application/json";
+                init.body = JSON.stringify(body);
+            }
+            const response = await fetch(path, init);
+            let data = {};
+            try { data = await response.json(); } catch { /* empty body */ }
+            if (response.status === 401 && path !== "/api/login") {
+                showLogin();
+                throw new AuthError(data.error || "Please sign in.");
+            }
+            if (response.status === 503 && path !== "/api/login") {
+                showLogin(data.error);
+                throw new AuthError(data.error || "The portal isn't set up yet.");
+            }
+            if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+            return data;
+        }
+
+        function showLogin(message) {
+            ui.loginHint.textContent = message || "Enter the portal password.";
+            ui.loginScreen.classList.remove("hidden");
+            setTimeout(() => ui.loginPassword.focus(), 50);
+        }
+
+        function hideLogin() {
+            ui.loginScreen.classList.add("hidden");
+            ui.loginError.textContent = "";
+        }
+
+        // Merge what the Worker sent. A full load replaces everything; otherwise each
+        // person's timeline from `since` onwards is swapped for the Worker's copy.
+        function applyState(data, since) {
+            if (data.full) {
+                appState.records = new Map();
+                appState.logs = [];
+            }
+            appState.server = { status: data.status, schedule: data.schedule, override: data.override, connection: data.connection };
+            appState.rules = data.rules || appState.rules;
+            appState.selectedUsers = new Map(data.people.map((p) => [p.id, p]));
+
+            for (const r of data.records) {
+                let rec = appState.records.get(r.userId);
+                if (!rec) {
+                    rec = newRecord({ id: r.userId, displayName: r.userLabel });
+                    appState.records.set(r.userId, rec);
                 }
+                Object.assign(rec, r);
             }
-            throw lastError || new Error("Couldn't load the Microsoft sign-in library.");
-        }
-
-        let msalLoadPromise = null;
-        function ensureMsal() {
-            if (!msalLoadPromise) {
-                msalLoadPromise = loadMsalLibrary().catch((error) => { msalLoadPromise = null; throw error; });
+            const cutoff = data.now - KEEP_MS;
+            for (const [userId, rows] of Object.entries(data.segments || {})) {
+                const rec = appState.records.get(userId);
+                if (!rec) continue;
+                if (data.full) {
+                    rec.segments = rows;
+                } else {
+                    const from = rows.length ? Math.min(rows[0].s, since) : since;
+                    rec.segments = rec.segments.filter((x) => x.s < from).concat(rows);
+                }
+                if (rec.segments.length && rec.segments[0].e < cutoff) rec.segments = rec.segments.filter((x) => x.e >= cutoff);
             }
-            return msalLoadPromise;
+
+            appState.logs = data.full ? data.logs : appState.logs.concat(data.logs);
+            if (appState.logs.length > 5000) appState.logs = appState.logs.slice(-5000);
+            if (appState.logs.length) appState.lastLogId = appState.logs[appState.logs.length - 1].id;
+            else if (data.full) appState.lastLogId = 0;
+
+            appState.version = data.version;
+            appState.lastSync = data.now;
         }
 
-        async function initializeMsalFromInputs() {
-            const tenantId = ui.tenantId.value.trim();
-            const clientId = ui.clientId.value.trim();
-            if (!tenantId || !clientId) throw new Error("Add your Tenant ID and Client ID in Settings first.");
-            await ensureMsal();
-            appState.msalInstance = new msal.PublicClientApplication({
-                auth: { clientId, authority: `https://login.microsoftonline.com/${tenantId}`, redirectUri: window.location.origin + window.location.pathname },
-                cache: { cacheLocation: "localStorage" }
-            });
-            await appState.msalInstance.initialize();
-            appState.account = appState.msalInstance.getAllAccounts()[0] || null;
-            renderData();
-        }
-
-        async function signIn() {
-            setError("");
-            if (!appState.msalInstance) await initializeMsalFromInputs();
+        async function sync({ full = false, quiet = false } = {}) {
+            if (appState.syncing) return;
+            appState.syncing = true;
             try {
-                const res = await appState.msalInstance.loginPopup({ scopes: GRAPH_SCOPES });
-                appState.account = res.account;
+                const since = !full && appState.lastSync ? appState.lastSync - OVERLAP_MS : 0;
+                const qs = since ? `?since=${since}&logAfter=${appState.lastLogId}&version=${appState.version}` : "";
+                const data = await api(`/api/state${qs}`);
+                applyState(data, since);
+                hideLogin();
+                renderSelectedUsers();
+                renderDirectoryUsers();
+                renderRules();
+                renderSchedule();
                 renderData();
-                toast(`Signed in as ${appState.account.username}`);
             } catch (error) {
-                const code = lower(error && error.errorCode);
-                if (code.includes("popup") || lower(errorText(error)).includes("popup")) {
-                    toast("Popup blocked — redirecting to sign in…");
-                    await appState.msalInstance.loginRedirect({ scopes: GRAPH_SCOPES });
-                    return;
-                }
-                throw error;
+                if (!(error instanceof AuthError) && !quiet) setError(errorText(error));
+            } finally {
+                appState.syncing = false;
             }
         }
 
-        async function getAccessToken(scopes = GRAPH_SCOPES) {
-            if (!appState.msalInstance || !appState.account) throw new Error("Please sign in first.");
-            const request = { account: appState.account, scopes };
+        async function login(password) {
+            ui.loginBtn.disabled = true;
+            ui.loginError.textContent = "";
             try {
-                return (await appState.msalInstance.acquireTokenSilent(request)).accessToken;
+                await api("/api/login", { method: "POST", body: { password } });
+                ui.loginPassword.value = "";
+                appState.lastSync = 0;
+                await sync({ full: true });
+                renderImportBox();
             } catch (error) {
-                const code = lower(error && error.errorCode);
-                if (!(code.includes("interaction") || code.includes("consent") || code.includes("login"))) throw error;
-                return (await appState.msalInstance.acquireTokenPopup(request)).accessToken;
+                ui.loginError.textContent = errorText(error);
+            } finally {
+                ui.loginBtn.disabled = false;
             }
         }
 
         async function signOut() {
-            if (appState.timerId) stopMonitoring();
-            if (appState.msalInstance && appState.account) {
-                await appState.msalInstance.logoutPopup({ account: appState.account });
-            }
-            appState.account = null;
-            renderData();
-            toast("Signed out");
+            await api("/api/logout", { method: "POST" }).catch(() => {});
+            appState.server = null;
+            appState.records = new Map();
+            appState.logs = [];
+            appState.selectedUsers = new Map();
+            appState.lastSync = 0;
+            renderAll();
+            showLogin("Signed out. Enter the password to sign back in.");
         }
 
-        /* =========================================================
-           Microsoft Graph
-           ========================================================= */
         async function loadDirectoryUsers() {
             setError("");
-            const token = await getAccessToken(["User.Read", "User.ReadBasic.All"]);
             const term = ui.userSearch.value.trim();
-            let url = "https://graph.microsoft.com/v1.0/users?$select=id,displayName,mail,userPrincipalName&$top=30";
-            if (term) {
-                const safe = term.replaceAll("'", "''");
-                url += `&$filter=${encodeURIComponent(`startswith(displayName,'${safe}') or startswith(mail,'${safe}') or startswith(userPrincipalName,'${safe}')`)}`;
-            }
             ui.loadUsersBtn.disabled = true;
             try {
-                const response = await fetch(url, { headers: { Authorization: `Bearer ${token}`, ConsistencyLevel: "eventual" } });
-                if (!response.ok) throw new Error(`User lookup failed (${response.status}): ${await response.text()}`);
-                const result = await response.json();
-                appState.directoryUsers = (result.value || []).map((u) => ({ id: u.id, displayName: u.displayName, mail: u.mail, userPrincipalName: u.userPrincipalName }));
+                const result = await api(`/api/users/search?q=${encodeURIComponent(term)}`);
+                appState.directoryUsers = result.users || [];
                 renderDirectoryUsers();
                 if (appState.directoryUsers.length === 0) {
                     ui.userResults.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;"><strong>No matches</strong>Try a different name or email.</div>`;
@@ -2323,144 +2285,113 @@
             }
         }
 
-        async function fetchPresenceForUser(userId, token) {
-            const response = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userId)}/presence`, { headers: { Authorization: `Bearer ${token}` } });
-            if (!response.ok) throw new Error(`Presence check failed (${response.status}): ${await response.text()}`);
-            return response.json();
-        }
-
-        // One request for everyone (up to 650 per call); falls back to one request per person.
-        async function fetchPresences(users, token) {
-            const results = new Map();
-            const batchable = appState.batchSupported && users.every((u) => GUID_RE.test(u.id));
-            if (batchable) {
-                try {
-                    for (let i = 0; i < users.length; i += 650) {
-                        const ids = users.slice(i, i + 650).map((u) => u.id);
-                        const response = await fetch("https://graph.microsoft.com/v1.0/communications/getPresencesByUserId", {
-                            method: "POST",
-                            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-                            body: JSON.stringify({ ids })
-                        });
-                        if (!response.ok) {
-                            const body = await response.text();
-                            if (response.status >= 400 && response.status < 500 && response.status !== 401 && response.status !== 429) {
-                                appState.batchSupported = false;
-                            }
-                            throw new Error(`Batch presence check failed (${response.status}): ${body}`);
-                        }
-                        const data = await response.json();
-                        (data.value || []).forEach((p) => results.set(p.id, p));
-                    }
-                    users.forEach((u) => { if (!results.has(u.id)) results.set(u.id, new Error("No presence returned for this person.")); });
-                    return results;
-                } catch (error) {
-                    if (appState.batchSupported) {
-                        users.forEach((u) => results.set(u.id, error));
-                        return results;
-                    }
-                    results.clear(); // fall through to per-person checks
-                }
-            }
-            for (const user of users) {
-                if (!appState.timerId) break;
-                try {
-                    results.set(user.id, await fetchPresenceForUser(user.id, token));
-                } catch (error) {
-                    results.set(user.id, error);
-                }
-            }
-            return results;
-        }
-
         /* =========================================================
-           Monitoring
+           Tracking controls
            ========================================================= */
-        async function pollPresenceOnce() {
-            if (appState.polling || !appState.timerId) return;
-            const users = getMonitoredUsers();
-            if (users.length === 0) { renderData(); return; }
-
-            appState.polling = true;
-            try {
-                let token;
-                try {
-                    token = await getAccessToken();
-                } catch (error) {
-                    const now = Date.now();
-                    users.forEach((u) => applyError(u, `Sign-in problem: ${errorText(error)}`, now));
-                    setError(`Couldn't get a Microsoft token: ${errorText(error)}`);
-                    return;
-                }
-                const results = await fetchPresences(users, token);
-                if (!appState.timerId) return; // stopped while waiting
-                const now = Date.now();
-                for (const user of users) {
-                    const result = results.get(user.id);
-                    if (!result || result instanceof Error) {
-                        applyError(user, result ? errorText(result) : "No result", now);
-                    } else {
-                        applyPresence(user, result, now);
-                    }
-                }
-                appState.lastPollAt = now;
-            } finally {
-                appState.polling = false;
-                saveLogs();
-                saveMonitorState();
-                renderData();
-            }
-        }
-
-        async function startMonitoring() {
+        async function control(action) {
+            if (action === "stop" && !window.confirm("Stop tracking for the rest of today? It starts again on schedule tomorrow.")) return;
             setError("");
-            if (!appState.account) throw new Error("Sign in with Microsoft before going live.");
-            if (getMonitoredUsers().length === 0) {
-                goToPeopleManager();
-                throw new Error("Add at least one person to track first.");
+            await api("/api/control", { method: "POST", body: { action } });
+            await sync();
+            toast(action === "start" ? "Tracking started" : action === "stop" ? "Stopped for today" : "Back on schedule");
+        }
+
+        async function checkNow() {
+            setError("");
+            const result = await api("/api/check-now", { method: "POST" });
+            await sync();
+            if (result.skipped) toast(result.skipped);
+            else if (result.result && result.result.live === false) toast("Outside tracking hours — nothing to check");
+            else toast("Checked");
+        }
+
+        async function saveSchedule() {
+            setError("");
+            ui.saveScheduleBtn.disabled = true;
+            try {
+                await api("/api/schedule", { method: "PUT", body: readScheduleForm() });
+                appState.scheduleDirty = false;
+                await sync();
+                renderSchedule(true);
+                toast("Tracking hours saved");
+            } finally {
+                ui.saveScheduleBtn.disabled = false;
             }
-            clearInterval(appState.timerId);
-            appState.runningPollMs = Number(ui.pollSeconds.value) * 1000;
-            appState.sessionStartedAt = Date.now();
-            appState.timerId = setInterval(pollPresenceOnce, appState.runningPollMs);
-            clearInterval(appState.tickId);
-            appState.tickId = setInterval(tickLive, 1000);
-            renderRules();
-            renderData();
-            toast("You're live");
-            await pollPresenceOnce();
         }
 
-        function stopMonitoring() {
-            closeAllIntervals(Date.now());
-            clearInterval(appState.timerId);
-            clearInterval(appState.tickId);
-            appState.timerId = null;
-            appState.tickId = null;
-            appState.runningPollMs = null;
-            appState.sessionStartedAt = null;
-            saveMonitorState();
-            renderRules();
-            renderData();
-        }
-
-        function resetAll() {
+        async function resetAll() {
             if (!window.confirm("Reset everyone's totals, timelines and the activity log? This can't be undone.")) return;
-            appState.logs = [];
-            appState.records.clear();
-            saveLogs();
-            saveMonitorState();
-            renderData();
+            await api("/api/reset", { method: "POST" });
+            await sync({ full: true });
             toast("All history reset");
         }
 
-        function setTracked(user, tracked) {
+        async function setTracked(user, tracked) {
+            setError("");
             if (tracked) appState.selectedUsers.set(user.id, user);
             else appState.selectedUsers.delete(user.id);
-            saveConfig();
             renderSelectedUsers();
             renderDirectoryUsers();
             renderData();
+            try {
+                if (tracked) await api("/api/people", { method: "POST", body: { user } });
+                else await api(`/api/people/${encodeURIComponent(user.id)}`, { method: "DELETE" });
+            } finally {
+                await sync();
+            }
+        }
+
+        /* =========================================================
+           Bringing over history from the old browser-only version
+           ========================================================= */
+        function legacyData() {
+            if (storeGet(IMPORTED_KEY)) return null;
+            let config = {}, state = {}, logs = [];
+            try { config = JSON.parse(storeGet(LEGACY_CONFIG_KEY) || "{}") || {}; } catch { /* ignore */ }
+            try { state = JSON.parse(storeGet(LEGACY_STATE_KEY) || "{}") || {}; } catch { /* ignore */ }
+            try { logs = JSON.parse(storeGet(LEGACY_LOG_KEY) || "[]"); } catch { /* ignore */ }
+            const people = (config.selectedUsers || []).filter((u) => u && u.id);
+            const records = (state.records || []).filter((r) => r && r.userId);
+            if (!Array.isArray(logs)) logs = [];
+            const segCount = records.reduce((n, r) => n + (Array.isArray(r.segments) ? r.segments.length : 0), 0);
+            if (!people.length && !segCount && !logs.length) return null;
+            return { people, records, logs };
+        }
+
+        async function importLegacy() {
+            const data = legacyData();
+            if (!data) return;
+            setError("");
+            await sync({ full: true });
+            const keepFrom = Date.now() - KEEP_MS;
+
+            // Only history from before the cloud started recording each person, so nothing doubles up.
+            const segments = [];
+            for (const r of data.records) {
+                const server = appState.records.get(r.userId);
+                const cutoff = server && server.segments.length ? server.segments[0].s : Infinity;
+                for (const x of r.segments || []) {
+                    if (x && x.e > x.s && x.e <= cutoff && x.e >= keepFrom) segments.push({ userId: r.userId, s: x.s, e: x.e, st: x.st, adj: Boolean(x.adj) });
+                }
+            }
+            const firstServerLog = new Map();
+            for (const l of appState.logs) if (!firstServerLog.has(l.userId)) firstServerLog.set(l.userId, Date.parse(l.timestamp));
+            const logs = data.logs.filter((l) => {
+                const t = Date.parse(l && l.timestamp);
+                return l && l.userId && t >= keepFrom && t < (firstServerLog.get(l.userId) ?? Infinity);
+            });
+
+            await api("/api/import", { method: "POST", body: {
+                people: data.people,
+                records: data.records.map((r) => ({ userId: r.userId, userLabel: r.userLabel, firstSeenAt: r.firstSeenAt }))
+            } });
+            for (let i = 0; i < segments.length; i += 600) await api("/api/import", { method: "POST", body: { segments: segments.slice(i, i + 600) } });
+            for (let i = 0; i < logs.length; i += 600) await api("/api/import", { method: "POST", body: { logs: logs.slice(i, i + 600) } });
+
+            storeSet(IMPORTED_KEY, String(Date.now()));
+            await sync({ full: true });
+            renderImportBox();
+            toast(`Copied ${data.people.length} people, ${segments.length} timeline blocks and ${logs.length} changes`);
         }
 
         function goToPeopleManager() {
@@ -2510,17 +2441,25 @@
            ========================================================= */
         ui.navButtons.forEach((b) => b.addEventListener("click", () => setActiveView(b.dataset.view)));
 
+        function goToHours() {
+            setActiveView("settings");
+            setTimeout(() => document.getElementById("scheduleCard").scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+        }
+
         async function runAction(action) {
             try {
-                if (action === "signin") await signIn();
-                else if (action === "signout") await signOut();
-                else if (action === "start") await startMonitoring();
+                if (action === "signout") await signOut();
+                else if (action === "start" || action === "stop" || action === "auto") await control(action);
+                else if (action === "check-now") await checkNow();
                 else if (action === "goto-settings") setActiveView("settings");
                 else if (action === "goto-people") goToPeopleManager();
+                else if (action === "goto-hours") goToHours();
                 else if (action === "export-totals") exportTotals();
                 else if (action === "export-log") exportLog();
+                else if (action === "import") await importLegacy();
+                else if (action === "import-dismiss") { storeSet(IMPORTED_KEY, "dismissed"); renderImportBox(); }
             } catch (error) {
-                setError(errorText(error));
+                if (!(error instanceof AuthError)) setError(errorText(error));
             }
         }
 
@@ -2533,7 +2472,7 @@
             if (el.dataset.period) {
                 appState.period = el.dataset.period;
                 ui.periodControl.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.period === appState.period));
-                saveConfig();
+                savePrefs();
                 renderData();
                 return;
             }
@@ -2579,41 +2518,30 @@
         ui.sortSelect.addEventListener("change", () => { appState.sort = ui.sortSelect.value; renderData(); });
         ui.logPerson.addEventListener("change", () => { appState.logPerson = ui.logPerson.value; renderLog(); });
 
-        ui.signInBtn.addEventListener("click", () => runAction("signin"));
+        ui.monitorBtn.addEventListener("click", () => runAction(isLive() ? "stop" : "start"));
 
-        ui.monitorBtn.addEventListener("click", () => {
-            if (appState.timerId) {
-                stopMonitoring();
-                toast("Monitoring stopped");
-                return;
+        ui.saveScheduleBtn.addEventListener("click", () => saveSchedule().catch((error) => { if (!(error instanceof AuthError)) setError(errorText(error)); }));
+        ui.scheduleRows.addEventListener("input", (event) => {
+            appState.scheduleDirty = true;
+            const row = event.target.closest("[data-day-row]");
+            if (row && event.target.dataset.sched === "on") {
+                const on = event.target.checked;
+                row.classList.toggle("off", !on);
+                row.querySelectorAll('input[type="time"]').forEach((i) => { i.disabled = !on; });
             }
-            runAction("start");
         });
 
-        ui.saveConfigBtn.addEventListener("click", () => {
-            setError("");
-            saveConfig();
-            appState.msalInstance = null; // pick up any new IDs
-            if (appState.timerId) {
-                const newMs = Number(ui.pollSeconds.value) * 1000;
-                if (newMs !== appState.runningPollMs) {
-                    clearInterval(appState.timerId);
-                    appState.runningPollMs = newMs;
-                    appState.timerId = setInterval(pollPresenceOnce, newMs);
-                }
-            }
-            renderRules();
-            renderData();
-            initializeMsalFromInputs().catch(() => {});
-            toast("Settings saved");
+        ui.loginForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            login(ui.loginPassword.value);
         });
 
-        ui.clearLogsBtn.addEventListener("click", resetAll);
+        ui.clearLogsBtn.addEventListener("click", () => resetAll().catch((error) => { if (!(error instanceof AuthError)) setError(errorText(error)); }));
         $("exportBtn").addEventListener("click", exportLog);
         $("exportTotalsBtn").addEventListener("click", exportTotals);
 
         async function searchUsers() {
-            try { await loadDirectoryUsers(); } catch (error) { setError(errorText(error)); }
+            try { await loadDirectoryUsers(); } catch (error) { if (!(error instanceof AuthError)) setError(errorText(error)); }
         }
 
         ui.loadUsersBtn.addEventListener("click", searchUsers);
@@ -2627,14 +2555,14 @@
             const target = event.target;
             if (!target || target.type !== "checkbox" || !target.dataset.userId) return;
             const user = appState.directoryUsers.find((u) => u.id === target.dataset.userId);
-            if (user) setTracked(user, target.checked);
+            if (user) setTracked(user, target.checked).catch((error) => { if (!(error instanceof AuthError)) setError(errorText(error)); });
         });
 
         ui.selectedUsers.addEventListener("click", (event) => {
             const btn = event.target.closest("[data-remove-id]");
             if (!btn) return;
             const user = appState.selectedUsers.get(btn.dataset.removeId);
-            if (user) setTracked(user, false);
+            if (user) setTracked(user, false).catch((error) => { if (!(error instanceof AuthError)) setError(errorText(error)); });
         });
 
         ui.clearSelectedUsersBtn.addEventListener("click", () => {
@@ -2642,10 +2570,12 @@
             if (!window.confirm("Stop tracking everyone? Their history is kept.")) return;
             appState.selectedUsers.clear();
             appState.selectedDetailUserId = null;
-            saveConfig();
             renderSelectedUsers();
             renderDirectoryUsers();
             renderData();
+            api("/api/people", { method: "DELETE" })
+                .catch((error) => { if (!(error instanceof AuthError)) setError(errorText(error)); })
+                .finally(() => sync());
         });
 
         ui.trackedPeopleList.addEventListener("click", (event) => {
@@ -2657,48 +2587,23 @@
             tickLive();
         });
 
-        // When the tab comes back into view, check straight away if a check is overdue.
+        // Fetch fresh numbers when the page comes back into view (e.g. unlocking your phone).
         document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState === "visible" && appState.timerId && Date.now() - (appState.lastPollAt || 0) > pollIntervalMs()) {
-                pollPresenceOnce();
-            }
+            if (document.visibilityState === "visible" && Date.now() - appState.lastSync > 15000) sync({ quiet: true });
         });
 
-        // Closing or reloading ends the monitored session: credit up to now, then stop counting.
-        window.addEventListener("pagehide", () => {
-            if (appState.timerId) closeAllIntervals(Date.now());
-            saveLogs();
-            saveMonitorState();
-        });
-
-        // Keep "x min ago" labels and the now-line fresh.
-        setInterval(() => { if (!appState.polling) renderData(); }, 30000);
+        // Keep numbers fresh while open, and the live counters ticking every second.
+        setInterval(() => { if (document.visibilityState === "visible") sync({ quiet: true }); }, SYNC_MS);
+        setInterval(tickLive, 1000);
 
         /* =========================================================
            Boot
            ========================================================= */
-        loadConfig();
-        loadLogs();
-        loadMonitorState();
+        loadPrefs();
         ui.periodControl.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.period === appState.period));
         setActiveView("dashboard");
         renderAll();
-
-        ensureMsal().catch((error) => setError(errorText(error)));
-
-        (async () => {
-            try {
-                if (!ui.tenantId.value.trim() || !ui.clientId.value.trim()) return;
-                await initializeMsalFromInputs();
-                const redirectResult = await appState.msalInstance.handleRedirectPromise();
-                if (redirectResult && redirectResult.account) {
-                    appState.account = redirectResult.account;
-                    renderData();
-                }
-            } catch (error) {
-                setError(errorText(error));
-            }
-        })();
+        sync({ full: true }).then(renderImportBox);
     </script>
 </body>
 </html>
