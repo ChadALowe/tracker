@@ -17,13 +17,12 @@
   // using UK time, so nothing here needs changing when the clocks go back or forward.
   "triggers": { "crons": ["* * * * *"] },
 
-  // Create the database once (dashboard: Storage & Databases → D1 → Create, name it "presence"),
-  // then paste its Database ID below. Tables are created automatically on first run.
+  // The "presence" D1 database. Tables are created automatically on first run.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "presence",
-      "database_id": "PASTE-YOUR-D1-DATABASE-ID-HERE"
+      "database_id": "89117845-a3b9-48fe-a745-e1ce40dad212"
     }
   ],
 

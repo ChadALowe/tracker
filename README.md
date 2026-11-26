@@ -39,7 +39,7 @@ The old page signed in as *you*, in the browser. The Worker has no browser, so i
 
 ### 2. Cloudflare database
 
-Dashboard → **Storage & Databases** → **D1** → **Create database**, name it `presence`. Copy its **Database ID** into `wrangler.jsonc` (replace `PASTE-YOUR-D1-DATABASE-ID-HERE`).
+Done: the `presence` D1 database exists and its ID is already in `wrangler.jsonc`.
 
 The tables are created automatically the first time the Worker runs.
 
@@ -58,7 +58,7 @@ Secrets stay in place across deploys. Changing `PORTAL_PASSWORD` signs everyone 
 
 ### 4. Deploy
 
-- **If your Worker is connected to this GitHub repo** (Workers Builds): first check that `"name"` in `wrangler.jsonc` matches your Worker's name. Then merge this branch, and Cloudflare deploys it.
+- **Your `tracker` Worker is connected to this GitHub repo** (Workers Builds), so merging this branch into `main` deploys it.
 - **From a computer:** `npm install`, then `npx wrangler deploy`.
 
 The cron trigger (`* * * * *`) comes from `wrangler.jsonc`, so you don't need to set it up in the dashboard.
