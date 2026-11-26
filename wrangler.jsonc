@@ -5,6 +5,8 @@
   "main": "src/worker.js",
   "compatibility_date": "2025-09-01",
   "workers_dev": true,
+  // Keep variables added in the dashboard when deploying from GitHub.
+  "keep_vars": true,
 
   // The portal page. /api/* goes to the Worker code; everything else is a static file.
   "assets": {
