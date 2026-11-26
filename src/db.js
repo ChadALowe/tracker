@@ -4,7 +4,9 @@
 // Statements are kept few and multi-row, because D1 counts queries per invocation.
 
 export const KEEP_MS = 180 * 24 * 60 * 60 * 1000;
-const TAIL = 12;          // recent segments loaded per person for each check
+// A check can only change segments that end in the last few minutes (3-minute gap
+// limit + 5-minute Away adjustment), so each check loads segments ending after this.
+const TAIL_MS = 15 * 60 * 1000;
 const MAX_PARAMS = 99;    // D1 allows 100 bound parameters per statement
 
 export const SCHEMA = [
@@ -16,7 +18,8 @@ export const SCHEMA = [
     `CREATE TABLE IF NOT EXISTS segments (
         id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL,
         s INTEGER NOT NULL, e INTEGER NOT NULL, st TEXT NOT NULL, adj INTEGER NOT NULL DEFAULT 0)`,
-    `CREATE INDEX IF NOT EXISTS segments_user_s ON segments (user_id, s)`,
+    `DROP INDEX IF EXISTS segments_user_s`,
+    `CREATE INDEX IF NOT EXISTS segments_user_e ON segments (user_id, e)`,
     `CREATE TABLE IF NOT EXISTS logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, user_id TEXT NOT NULL,
         user_label TEXT, from_av TEXT, to_av TEXT, activity TEXT)`,
@@ -88,13 +91,14 @@ export function segmentFromRow(r) {
 
 // Loads each record's most recent segments into rec.segments and remembers what
 // they looked like, so saveRecords() only writes what changed.
-export async function loadTails(env, recs) {
+export async function loadTails(env, recs, nowMs = Date.now()) {
     if (recs.length === 0) return;
     const byUser = new Map(recs.map((r) => [r.userId, r]));
     for (const rec of recs) { rec.segments = []; rec._orig = new Map(); }
-    for (const group of chunkRows(recs, 1)) {
-        const sql = group.map(() => `SELECT * FROM (SELECT id, user_id, s, e, st, adj FROM segments WHERE user_id = ? ORDER BY s DESC LIMIT ${TAIL})`).join(" UNION ALL ");
-        const { results } = await env.DB.prepare(sql).bind(...group.map((r) => r.userId)).all();
+    for (const group of chunkRows(recs, 2)) { // ids + one cutoff parameter
+        const sql = `SELECT id, user_id, s, e, st, adj FROM segments
+            WHERE user_id IN (${group.map(() => "?").join(", ")}) AND e >= ?`;
+        const { results } = await env.DB.prepare(sql).bind(...group.map((r) => r.userId), nowMs - TAIL_MS).all();
         for (const row of results) {
             const rec = byUser.get(row.user_id);
             const seg = segmentFromRow(row);
@@ -173,25 +177,23 @@ export function logFromRow(r) {
     };
 }
 
-// Segments for the portal. Without `since`, everything kept. With `since`, for each
-// person: the last segment starting before `since` and everything after it — which
-// covers every segment a check could have changed since the portal last asked.
+// Segments for the portal. Without `since`, everything kept. With `since`, every
+// segment ending at or after `since` — a check only ever changes segments ending
+// within the last few minutes, so this covers everything changed since the portal
+// last asked (it asks with `since` 10 minutes before its last sync).
 export async function segmentsForPortal(env, userIds, since) {
     const out = {};
+    for (const id of userIds) out[id] = [];
     if (!since) {
         const { results } = await env.DB.prepare("SELECT user_id, s, e, st, adj FROM segments ORDER BY user_id, s").all();
-        for (const id of userIds) out[id] = [];
         for (const row of results) (out[row.user_id] ||= []).push(segmentFromRow(row));
         return out;
     }
-    for (const group of chunkRows(userIds, 4)) {
-        const sql = group.map(() => `SELECT * FROM (SELECT user_id, s, e, st, adj FROM segments
-            WHERE user_id = ? AND s >= COALESCE((SELECT MAX(s) FROM segments WHERE user_id = ? AND s < ?), ?))`).join(" UNION ALL ");
-        const params = group.flatMap((id) => [id, id, since, since]);
-        const { results } = await env.DB.prepare(sql).bind(...params).all();
-        for (const id of group) out[id] = [];
+    for (const group of chunkRows(userIds, 2)) { // ids + one `since` parameter
+        const sql = `SELECT user_id, s, e, st, adj FROM segments
+            WHERE user_id IN (${group.map(() => "?").join(", ")}) AND e >= ? ORDER BY user_id, s`;
+        const { results } = await env.DB.prepare(sql).bind(...group, since).all();
         for (const row of results) out[row.user_id].push(segmentFromRow(row));
     }
-    for (const id of Object.keys(out)) out[id].sort((a, b) => a.s - b.s);
     return out;
 }

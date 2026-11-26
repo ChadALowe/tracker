@@ -22,7 +22,7 @@ function scheduleFrom(meta) {
 
 async function closeOpen(env, recs, nowMs) {
     if (recs.length === 0) return [];
-    await loadTails(env, recs);
+    await loadTails(env, recs, nowMs);
     for (const rec of recs) closeInterval(rec, nowMs, false);
     return saveStatements(env, recs, []);
 }
@@ -72,7 +72,7 @@ async function cycle(env, nowMs) {
         if (!meta.live_since) metaUpdates.live_since = nowMs;
         if (people.length > 0) {
             const recs = people.map((p) => records.get(p.id) || newRecord(p));
-            await loadTails(env, recs);
+            await loadTails(env, recs, nowMs);
             const logs = [];
             let token = null;
             let failure = null;
