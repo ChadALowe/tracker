@@ -11,6 +11,10 @@ import {
 } from "./db.js";
 
 const PRUNE_EVERY_MS = 24 * 60 * 60 * 1000;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+function dayBefore(date) {
+    return new Date(Date.parse(`${date}T12:00:00Z`) - 86400000).toISOString().slice(0, 10);
+}
 const PORTAL_LOGS = 5000;
 
 /* =========================================================
@@ -215,6 +219,7 @@ async function apiState(env, url) {
         status: { ...state, liveSince: meta.live_since || null, lastPollAt: meta.last_poll_at || null, lastError: meta.last_error || null },
         schedule, override: meta.override && meta.override.until > nowMs ? meta.override : null,
         connection: connectionStatus(env),
+        leave: Array.isArray(meta.leave) ? meta.leave : [],
         rules: { pollMs: POLL_MS, gapLimitMs: GAP_LIMIT_MS, awayOffsetMs: AWAY_OFFSET_MS, keepMs: KEEP_MS },
         people: peopleFromRows(peopleRes.results),
         records, segments,
@@ -343,6 +348,33 @@ async function handleApi(request, env, url, ctx) {
             ...await bumpDataVersion(env)
         ]);
         return json({ ok: true });
+    }
+
+    if (path === "/api/leave" && method === "POST") {
+        const body = await readJson(request);
+        const meta = await getMeta(env);
+        const leave = Array.isArray(meta.leave) ? meta.leave : [];
+        const userId = typeof body.userId === "string" ? body.userId.trim() : "";
+        if (!userId) throw new HttpError(400, "Pick a person.");
+        let next;
+        if (body.action === "add") {
+            if (!DATE_RE.test(body.from || "") || !DATE_RE.test(body.to || "")) throw new HttpError(400, "Give a from and until date.");
+            if (body.to < body.from) throw new HttpError(400, "The until date must be on or after the from date.");
+            next = leave.concat({ userId, from: body.from, to: body.to });
+        } else if (body.action === "cancel") {
+            if (!DATE_RE.test(body.date || "")) throw new HttpError(400, "Missing date.");
+            // Back from `date` onwards: drop leave starting then or later, cut earlier leave short.
+            next = leave.flatMap((r) => {
+                if (r.userId !== userId || r.from > body.date || r.to < body.date) return [r];
+                return r.from >= body.date ? [] : [{ ...r, to: dayBefore(body.date) }];
+            });
+        } else {
+            throw new HttpError(400, "Unknown action.");
+        }
+        const keepFrom = new Date(Date.now() - 60 * 86400000).toISOString().slice(0, 10);
+        next = next.filter((r) => r.to >= keepFrom).slice(-500);
+        await env.DB.batch(metaStatements(env, { leave: next }));
+        return json({ ok: true, leave: next });
     }
 
     if (path === "/api/import" && method === "POST") {
