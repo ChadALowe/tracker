@@ -12,7 +12,8 @@ export const GAP_LIMIT_MS = Math.max(2 * POLL_MS, 3 * 60 * 1000);
 
 const lower = (v) => String(v || "").toLowerCase();
 
-export function isAvailableStatus(av) { return lower(av) === "available"; }
+// Busy (in a call or meeting) counts as available. Busy (idle) and Do not disturb don't.
+export function isAvailableStatus(av) { const a = lower(av); return a === "available" || a === "busy"; }
 export function isErrorStatus(av) { return lower(av) === "error"; }
 export function isOfflineStatus(av) { const a = lower(av); return a === "" || a === "offline" || a === "presenceunknown"; }
 export function isCountedStatus(av) { return !isOfflineStatus(av) && !isErrorStatus(av); }

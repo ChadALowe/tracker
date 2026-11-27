@@ -34,3 +34,15 @@ test("gaps longer than 3 minutes aren't counted; errors close the interval", () 
     assert.equal(rec.openSince, null);
     assert.equal(rec.segments[0].e, t0 + 12 * M);
 });
+
+test("Busy counts as available and gets the Away adjustment; Busy (idle) does not count", () => {
+    const rec = newRecord(user);
+    const t0 = Date.parse("2026-11-27T10:00:00Z");
+    for (let m = 0; m <= 20; m += 1) {
+        const av = m < 15 ? "Busy" : m < 18 ? "Away" : "BusyIdle";
+        applyPresence(rec, user, { availability: av }, t0 + m * M);
+    }
+    const sum = (pred) => rec.segments.filter(pred).reduce((n, s) => n + s.e - s.s, 0) / M;
+    assert.equal(sum((s) => s.st === "Busy" && !s.adj), 10); // 15 min busy minus 5-minute Away adjustment
+    assert.equal(sum((s) => s.adj), 5);
+});

@@ -1091,11 +1091,11 @@
                     <div class="card-head"><h3>The rules</h3></div>
                     <ol class="rule-list">
                         <li><span><strong>Time only counts during tracking hours.</strong> Your Cloudflare Worker checks everyone's Teams status every <b id="ruleInterval">minute</b>, in a single request, during the hours set in Settings (UK time). No browser needs to be open. Outside those hours, or when tracking is stopped for the day, nothing is counted.</span></li>
-                        <li><span><strong>Each gap between checks takes the earlier status.</strong> If a check at 10:00 says Available and the next at 10:01 says Busy, that minute counts as Available. Totals can be out by up to one check interval per status change.</span></li>
+                        <li><span><strong>Each gap between checks takes the earlier status.</strong> If a check at 10:00 says Available and the next at 10:01 says Away, that minute counts as Available. Totals can be out by up to one check interval per status change.</span></li>
                         <li><span><strong>Long gaps are skipped.</strong> If more than <b id="ruleGap">3 minutes</b> passes between checks (a missed run, Microsoft not answering), the gap isn't counted. The limit is 2× the check interval or 3 minutes, whichever is larger.</span></li>
                         <li><span><strong>Offline isn't online.</strong> Time showing as Offline or Unknown is left out of every total.</span></li>
-                        <li><span><strong>Only "Available" counts as available.</strong> Every other online status — Busy, In a call, Do not disturb, Be right back, Away, Available (idle) — counts as unavailable.</span></li>
-                        <li><span><strong>The Away adjustment.</strong> Teams only marks someone Away after about 5 minutes of inactivity. When a person goes from Available straight to Away (or an idle/inactive status), the last 5 minutes of that Available stretch are re-labelled as unavailable. It never reaches back past the start of the stretch the monitor saw. On timelines this shows as a striped block.</span></li>
+                        <li><span><strong>"Available" and "Busy" count as available.</strong> Busy covers being in a call or meeting. Every other online status — Busy (idle), Do not disturb, Be right back, Away, Available (idle) — counts as unavailable.</span></li>
+                        <li><span><strong>The Away adjustment.</strong> Teams only marks someone Away after about 5 minutes of inactivity. When a person goes from Available or Busy straight to Away (or an idle/inactive status), the last 5 minutes of that stretch are re-labelled as unavailable. It never reaches back past the start of the stretch the monitor saw. On timelines this shows as a striped block.</span></li>
                         <li><span><strong>Failed checks aren't guessed.</strong> If a check for someone fails, nothing is counted for them until their next successful check.</span></li>
                         <li><span><strong>Periods.</strong> <em>Today</em> runs from midnight on the clock of the device you're viewing on. <em>Last 7 days</em> is today plus the previous 6 days. <em>All time</em> is everything kept. Time crossing midnight is split between the two days. History older than 180 days is deleted automatically.</span></li>
                     </ol>
@@ -1109,7 +1109,8 @@
                             <tbody>
                                 <tr><td><span class="pill st-available"><i></i>Available</span></td><td>Yes</td><td>Available</td></tr>
                                 <tr><td><span class="pill st-away"><i></i>Available (idle)</span></td><td>Yes</td><td>Unavailable *</td></tr>
-                                <tr><td><span class="pill st-busy"><i></i>Busy / Busy (idle)</span></td><td>Yes</td><td>Unavailable</td></tr>
+                                <tr><td><span class="pill st-busy"><i></i>Busy</span></td><td>Yes</td><td>Available</td></tr>
+                                <tr><td><span class="pill st-busy"><i></i>Busy (idle)</span></td><td>Yes</td><td>Unavailable *</td></tr>
                                 <tr><td><span class="pill st-busy"><i></i>Do not disturb</span></td><td>Yes</td><td>Unavailable</td></tr>
                                 <tr><td><span class="pill st-away"><i></i>Be right back</span></td><td>Yes</td><td>Unavailable</td></tr>
                                 <tr><td><span class="pill st-away"><i></i>Away</span></td><td>Yes</td><td>Unavailable *</td></tr>
@@ -1118,7 +1119,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <p class="muted small" style="margin: 34px 0 0;">* Moving into these from Available triggers the Away adjustment (rule 06).</p>
+                    <p class="muted small" style="margin: 34px 0 0;">* Moving into these from Available or Busy triggers the Away adjustment (rule 06).</p>
                 </section>
 
                 <section class="card wide">
@@ -1338,7 +1339,8 @@
         function userLabel(user) { return user.displayName || user.userPrincipalName || user.mail || user.id; }
         function lower(value) { return String(value || "").toLowerCase(); }
 
-        function isAvailableStatus(av) { return lower(av) === "available"; }
+        // Busy (in a call or meeting) counts as available. Busy (idle) and Do not disturb don't.
+        function isAvailableStatus(av) { const a = lower(av); return a === "available" || a === "busy"; }
         function isErrorStatus(av) { return lower(av) === "error"; }
         function isOfflineStatus(av) { const a = lower(av); return a === "" || a === "offline" || a === "presenceunknown"; }
         function isCountedStatus(av) { return !isOfflineStatus(av) && !isErrorStatus(av); }
