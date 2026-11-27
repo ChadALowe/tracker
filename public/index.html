@@ -1194,7 +1194,7 @@
             </section>
 
             <section class="card">
-                <div class="card-head"><div><h3>🌴 On leave</h3><p id="leaveSub">People on leave sit out the race on those days. Their totals elsewhere aren't affected.</p></div></div>
+                <div class="card-head"><div><h3>🌴 On leave</h3><p id="leaveSub">People on leave sit out the race on those days, and leave days don't count towards any totals.</p></div></div>
                 <div id="raceLeaveList" class="leave-list"></div>
                 <form id="leaveForm" class="leave-form">
                     <label>Who<select id="leavePerson" required></select></label>
@@ -1242,6 +1242,7 @@
                         <li><span><strong>Offline isn't online.</strong> Time showing as Offline or Unknown is left out of every total.</span></li>
                         <li><span><strong>"Available" and "Busy" count as available.</strong> Busy covers being in a call or meeting. Every other online status — Busy (idle), Do not disturb, Be right back, Away, Available (idle) — counts as unavailable.</span></li>
                         <li><span><strong>The Away adjustment.</strong> Teams only marks someone Away after about 5 minutes of inactivity. When a person goes from Available or Busy straight to Away (or an idle/inactive status), the last 5 minutes of that stretch are re-labelled as unavailable. It never reaches back past the start of the stretch the monitor saw. On timelines this shows as a striped block.</span></li>
+                        <li><span><strong>Leave doesn't count.</strong> Days someone is marked on leave (Race page → On leave) are left out of every total, timeline and export for that person, even if Teams showed them online.</span></li>
                         <li><span><strong>Failed checks aren't guessed.</strong> If a check for someone fails, nothing is counted for them until their next successful check.</span></li>
                         <li><span><strong>Periods.</strong> <em>Today</em> runs from midnight on the clock of the device you're viewing on. <em>Last 7 days</em> is today plus the previous 6 days. <em>All time</em> is everything kept. Time crossing midnight is split between the two days. History older than 180 days is deleted automatically.</span></li>
                     </ol>
@@ -1635,9 +1636,56 @@
             return { s: rec.openSince, e: nowMs, st: rec.availability, live: true };
         }
 
+        // Leave, as time ranges per person (whole days in the schedule's time zone). Rebuilt when the leave list changes.
+        let leaveCache = { src: null, map: new Map() };
+        function leaveIntervals(userId) {
+            const leave = appState.server && appState.server.leave;
+            if (!leave || leave.length === 0) return null;
+            if (leaveCache.src !== leave) {
+                const tz = appState.server.schedule.timezone;
+                const dayStart = (iso, plus = 0) => {
+                    const [y, m, d] = iso.split("-").map(Number);
+                    const t = new Date(Date.UTC(y, m - 1, d + plus));
+                    return zoneToUtc(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate(), 0, 0, tz);
+                };
+                const map = new Map();
+                for (const r of leave) {
+                    if (!map.has(r.userId)) map.set(r.userId, []);
+                    map.get(r.userId).push({ s: dayStart(r.from), e: dayStart(r.to, 1) });
+                }
+                for (const list of map.values()) list.sort((a, b) => a.s - b.s);
+                leaveCache = { src: leave, map };
+            }
+            return leaveCache.map.get(userId) || null;
+        }
+
+        function isOnLeaveAt(userId, ms) {
+            const list = leaveIntervals(userId);
+            return Boolean(list && list.some((r) => ms >= r.s && ms < r.e));
+        }
+
+        // A person's timeline with leave days cut out, so leave never counts towards any total.
         function segmentsFor(rec, nowMs) {
             const pending = pendingSegment(rec, nowMs);
-            return pending ? rec.segments.concat([pending]) : rec.segments;
+            const segs = pending ? rec.segments.concat([pending]) : rec.segments;
+            const leave = leaveIntervals(rec.userId);
+            if (!leave) return segs;
+            const out = [];
+            for (const seg of segs) {
+                let pieces = [seg];
+                for (const r of leave) {
+                    if (r.e <= seg.s || r.s >= seg.e) continue;
+                    pieces = pieces.flatMap((p) => {
+                        if (r.e <= p.s || r.s >= p.e) return [p];
+                        const keep = [];
+                        if (p.s < r.s) keep.push({ ...p, e: r.s });
+                        if (p.e > r.e) keep.push({ ...p, s: r.e });
+                        return keep;
+                    });
+                }
+                out.push(...pieces);
+            }
+            return out;
         }
 
         function totalsBetween(userId, from, to, nowMs = Date.now()) {
@@ -1843,11 +1891,13 @@
 
         function renderHero() {
             const users = getMonitoredUsers();
-            const counts = { available: 0, unavailable: 0, offline: 0 };
-            users.forEach((u) => { counts[statusGroup(currentAv(u.id))] += 1; });
+            const counts = { available: 0, unavailable: 0, offline: 0, leave: 0 };
+            const now = Date.now();
+            users.forEach((u) => { counts[isOnLeaveAt(u.id, now) ? "leave" : statusGroup(currentAv(u.id))] += 1; });
             ui.nowAvailable.textContent = counts.available;
-            ui.nowTotal.textContent = users.length;
+            ui.nowTotal.textContent = users.length - counts.leave;
             const parts = [["available", "var(--available)", "available"], ["unavailable", "var(--away)", "unavailable"], ["offline", "var(--offline)", "offline / unknown"]];
+            if (counts.leave) parts.push(["leave", "#38bdf8", "on leave"]);
             ui.compoBar.innerHTML = users.length
                 ? parts.filter(([k]) => counts[k]).map(([k, c]) => `<i style="flex-grow:${counts[k]}; background:${c}"></i>`).join("")
                 : "";
@@ -2303,8 +2353,8 @@
         function renderRaceLeave(race, raceDate, everyone, onLeave) {
             const isToday = race && race.isToday;
             ui.leaveSub.textContent = race
-                ? `People on leave sit out the race on those days. Showing ${isToday ? "today" : fmtIsoDay(raceDate)}. Their totals elsewhere aren't affected.`
-                : "People on leave sit out the race on those days. Their totals elsewhere aren't affected.";
+                ? `People on leave sit out the race on those days, and leave days don't count towards any totals. Showing ${isToday ? "today" : fmtIsoDay(raceDate)}.`
+                : "People on leave sit out the race on those days, and leave days don't count towards any totals.";
             ui.raceLeaveList.innerHTML = everyone.filter((u) => onLeave.has(u.id)).map((u) => {
                 const r = onLeave.get(u.id);
                 const span = r.from === r.to ? fmtIsoDay(r.from) : `${fmtIsoDay(r.from)} – ${fmtIsoDay(r.to)}`;
@@ -2340,14 +2390,15 @@
             ui.leavePerson.value = "";
             renderRace(Date.now());
             const who = appState.selectedUsers.get(userId);
-            toast(`${who ? userLabel(who).split(" ")[0] : "They"}'s on leave — sitting out the race`);
+            renderData();
+            toast(`${who ? userLabel(who).split(" ")[0] : "They"}'s on leave — left out of the race and totals`);
         }
 
         async function cancelLeave(userId, date) {
             setError("");
             const result = await api("/api/leave", { method: "POST", body: { action: "cancel", userId, date } });
             appState.server.leave = result.leave;
-            renderRace(Date.now());
+            renderData();
             toast("Back in the race");
         }
 
