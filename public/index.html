@@ -857,6 +857,27 @@
         @keyframes legA { from { transform: rotate(28deg); } to { transform: rotate(-28deg); } }
         @keyframes legB { from { transform: rotate(-28deg); } to { transform: rotate(28deg); } }
         @keyframes dust { from { opacity: 0.8; transform: translateX(0) scale(0.6); } to { opacity: 0; transform: translateX(-16px) scale(1.6); } }
+        .podium { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 14px;
+            max-width: 760px; margin: 8px auto 0; padding-top: 30px; overflow: hidden; }
+        .podium-spot { position: relative; z-index: 1; display: grid; justify-items: center; gap: 8px; text-align: center; min-width: 0; }
+        .podium-spot .horse { position: static; transform: none; width: 92px; height: 66px; }
+        .podium-spot.first .horse { width: 116px; height: 83px; }
+        .podium-spot .avatar { --size: 40px; }
+        .podium-spot strong { font-size: 0.98rem; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .podium-spot small { font-family: var(--mono); color: var(--muted); font-size: 0.78rem; }
+        .podium-step { width: 100%; border-radius: 14px 14px 0 0; display: grid; place-items: start center; padding-top: 12px;
+            font-family: var(--display); font-weight: 800; font-size: 2rem; color: rgba(255, 255, 255, 0.92);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25); animation: rise-step 0.7s cubic-bezier(.2,.9,.3,1.2) both; }
+        .podium-spot.first .podium-step { height: 150px; background: linear-gradient(180deg, #f5c542, #b8860b); animation-delay: 0.35s; }
+        .podium-spot.second .podium-step { height: 110px; background: linear-gradient(180deg, #d5dbe5, #8a94a6); animation-delay: 0.15s; }
+        .podium-spot.third .podium-step { height: 80px; background: linear-gradient(180deg, #e0a06a, #9a5b2e); }
+        .podium-spot.empty { visibility: hidden; }
+        .podium-crown { font-size: 1.6rem; line-height: 1; animation: bob 1.6s ease-in-out infinite; }
+        @keyframes rise-step { from { transform: scaleY(0); transform-origin: bottom; } to { transform: scaleY(1); transform-origin: bottom; } }
+        @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        .confetti { position: absolute; z-index: 0; pointer-events: none; top: -12px; width: 7px; height: 12px; border-radius: 2px; opacity: 0.9; animation: fall linear infinite; }
+        @keyframes fall { 0% { transform: translateY(-20px) rotate(0deg); opacity: 0.9; } 70% { opacity: 0.9; } 100% { transform: translateY(200px) rotate(400deg); opacity: 0; } }
+        .podium-rest { text-align: center; color: var(--muted); font-size: 0.85rem; margin: 16px 0 0; }
         .race-cols { display: grid; grid-template-columns: 1.1fr 1fr; gap: 22px; }
         .board { min-width: 0 !important; }
         .board td, .board th { padding: 10px 8px; }
@@ -866,7 +887,8 @@
         .race-call b.t { white-space: nowrap; font-family: var(--mono); color: var(--muted); font-weight: 500; font-size: 0.78rem; padding-top: 2px; }
         .race-note { color: var(--muted); font-size: 0.8rem; margin: 12px 0 0; }
         @media (prefers-reduced-motion: reduce) {
-            .horse.galloping svg, .horse.galloping .leg, .horse.galloping .dust { animation: none; }
+            .horse.galloping svg, .horse.galloping .leg, .horse.galloping .dust, .podium-step, .podium-crown, .confetti { animation: none; }
+            .confetti { display: none; }
         }
 
         /* ---------- Sign-in screen ---------- */
@@ -936,6 +958,15 @@
             .turf { min-height: 62px; }
             .horse { width: 54px; height: 39px; }
             .race-cols { grid-template-columns: 1fr; }
+            .podium { gap: 8px; }
+            .podium-spot .horse { width: 64px; height: 46px; }
+            .podium-spot.first .horse { width: 80px; height: 57px; }
+            .podium-spot .avatar { --size: 32px; }
+            .podium-spot strong { font-size: 0.85rem; }
+            .podium-spot.first .podium-step { height: 120px; }
+            .podium-spot.second .podium-step { height: 88px; }
+            .podium-spot.third .podium-step { height: 62px; }
+            .podium-step { font-size: 1.5rem; }
             .board .now-col { display: none; }
             .board td, .board th { padding: 9px 6px; }
             .race-meta h2 { font-size: 1.3rem; }
@@ -1145,10 +1176,10 @@
             </section>
 
             <section class="card">
-                <div class="card-head"><div><h3>The field</h3><p>Every minute someone is unavailable, their horse gallops. Available or Busy? It stands still. The leader crosses the line when tracking hours end.</p></div></div>
+                <div class="card-head"><div><h3 id="raceFieldTitle">The field</h3><p id="raceFieldSub">Every minute someone is unavailable, their horse gallops. Available or Busy? It stands still. The leader crosses the line when tracking hours end.</p></div></div>
                 <div id="raceWinner"></div>
                 <div id="raceTrack" class="track"></div>
-                <p class="race-note">The horse in front sits at the race clock; everyone else is placed by how their unavailable time compares to the leader's.</p>
+                <p id="raceNote" class="race-note">The horse in front sits at the race clock; everyone else is placed by how their unavailable time compares to the leader's.</p>
             </section>
 
             <div class="race-cols">
@@ -1384,7 +1415,7 @@
             logBody: $("logBody"), logCount: $("logCount"), logPerson: $("logPerson"),
             ruleInterval: $("ruleInterval"), ruleGap: $("ruleGap"),
             raceTitle: $("raceTitle"), raceMeta: $("raceMeta"), raceBar: $("raceBar"), raceStart: $("raceStart"), raceNow: $("raceNow"),
-            raceEnd: $("raceEnd"), raceWinner: $("raceWinner"), raceTrack: $("raceTrack"), raceBoard: $("raceBoard"), raceCall: $("raceCall"),
+            raceEnd: $("raceEnd"), raceWinner: $("raceWinner"), raceFieldTitle: $("raceFieldTitle"), raceFieldSub: $("raceFieldSub"), raceNote: $("raceNote"), raceTrack: $("raceTrack"), raceBoard: $("raceBoard"), raceCall: $("raceCall"),
             connectionBox: $("connectionBox"), liveStatus: $("liveStatus"), scheduleRows: $("scheduleRows"), saveScheduleBtn: $("saveScheduleBtn"),
             selectedCount: $("selectedCount"), userSearch: $("userSearch"), loadUsersBtn: $("loadUsersBtn"),
             clearSelectedUsersBtn: $("clearSelectedUsersBtn"), selectedUsers: $("selectedUsers"), userResults: $("userResults"),
@@ -2207,6 +2238,26 @@
             return lines.sort((a, b) => b.t - a.t).slice(0, 10);
         }
 
+        function renderPodium(runners) {
+            const spot = (r, place, cls) => r && r.unavailable > 0 ? `
+                <div class="podium-spot ${cls}">
+                    ${place === 1 ? `<span class="podium-crown">👑</span>` : ""}
+                    <div class="horse">${horseSvg(r.hue, place)}</div>
+                    ${avatar(r.user.id, r.name)}
+                    <strong>${escapeHtml(r.name)}</strong>
+                    <small>${escapeHtml(fmtShort(r.unavailable))} unavailable</small>
+                    <div class="podium-step">${place}</div>
+                </div>` : `<div class="podium-spot ${cls} empty"><div class="podium-step"></div></div>`;
+            const colours = ["#f5c542", "#ff6a3d", "#34d399", "#60a5fa", "#f472b6", "#a78bfa"];
+            let seed = 7;
+            const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+            const confetti = Array.from({ length: 28 }, (_, i) =>
+                `<i class="confetti" style="left:${(rnd() * 100).toFixed(1)}%; background:${colours[i % colours.length]}; animation-duration:${(2.6 + rnd() * 2.4).toFixed(2)}s; animation-delay:${(-rnd() * 4).toFixed(2)}s;"></i>`).join("");
+            const rest = runners.slice(3).filter((r) => r.unavailable > 0);
+            return `<div class="podium">${confetti}${spot(runners[1], 2, "second")}${spot(runners[0], 1, "first")}${spot(runners[2], 3, "third")}</div>
+                ${rest.length ? `<p class="podium-rest">Also ran: ${rest.map((r, i) => `${i + 4}. ${escapeHtml(r.name)} (${escapeHtml(fmtShort(r.unavailable))})`).join(" · ")}</p>` : ""}`;
+        }
+
         function renderRace(now) {
             const race = currentRace(now);
             const people = getMonitoredUsers();
@@ -2258,7 +2309,19 @@
                 ? `<div class="race-winner">🏆 ${escapeHtml(runners[0].name)} wins with ${escapeHtml(fmtShort(lead))} unavailable${runners[1] ? `, ${escapeHtml(fmtShort(lead - runners[1].unavailable))} clear of ${escapeHtml(runners[1].name.split(" ")[0])}` : ""}.</div>`
                 : "";
 
-            ui.raceTrack.innerHTML = runners.map((r, i) => `
+            const finished = race.state === "finished" && lead > 0;
+            ui.raceFieldTitle.textContent = finished ? "The winners' podium" : "The field";
+            ui.raceFieldSub.textContent = finished
+                ? `Final result from ${hhmm(race.start)} to ${hhmm(race.end)}. Most unavailable time takes the top step.`
+                : "Every minute someone is unavailable, their horse gallops. Available or Busy? It stands still. The leader crosses the line when tracking hours end.";
+            ui.raceNote.classList.toggle("hidden", finished);
+            ui.raceTrack.classList.toggle("track", !finished);
+            if (finished) {
+                const html = renderPodium(runners);
+                if (ui.raceTrack.dataset.podium !== html) { ui.raceTrack.innerHTML = html; ui.raceTrack.dataset.podium = html; }
+            } else {
+                delete ui.raceTrack.dataset.podium;
+                ui.raceTrack.innerHTML = runners.map((r, i) => `
                 <div class="lane">
                     <div class="lane-who">
                         <span class="lane-num">${i + 1}</span>
@@ -2270,6 +2333,7 @@
                         <div class="horse${r.galloping ? " galloping" : ""}" style="left: calc(66px + (100% - 80px) * ${place(r).toFixed(4)})" title="${escapeHtml(r.name)}: ${escapeHtml(fmt(r.unavailable))} unavailable">${horseSvg(r.hue, i + 1)}</div>
                     </div>
                 </div>`).join("");
+            }
 
             const medals = ["🥇", "🥈", "🥉"];
             ui.raceBoard.innerHTML = runners.map((r, i) => `
