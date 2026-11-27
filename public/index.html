@@ -19,6 +19,7 @@
             --surface: rgba(20, 28, 46, 0.72);
             --surface-2: rgba(255, 255, 255, 0.04);
             --surface-solid: #121a2c;
+            --s1: #338ced; --s2: #e76624; --s3: #00a888; --s4: #d28e05; --s5: #e24d8b; --s6: #0aac23; --s7: #9887ef; --s8: #eb6263;
             --line: rgba(255, 255, 255, 0.08);
             --line-strong: rgba(255, 255, 255, 0.16);
             --ink: #eef2f9;
@@ -49,6 +50,7 @@
             --surface: rgba(255, 255, 255, 0.86);
             --surface-2: rgba(14, 23, 38, 0.035);
             --surface-solid: #ffffff;
+            --s1: #257de0; --s2: #f47230; --s3: #00b894; --s4: #f2a600; --s5: #ee7fac; --s6: #008a17; --s7: #6a4ce2; --s8: #ec4647;
             --line: rgba(14, 23, 38, 0.09);
             --line-strong: rgba(14, 23, 38, 0.18);
             --ink: #0d1526;
@@ -821,6 +823,24 @@
 
         .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+        /* ---------- Unavailable pie ---------- */
+        .pie-wrap { display: grid; grid-template-columns: 240px 1fr; gap: 28px; align-items: center; }
+        .pie { position: relative; width: 240px; height: 240px; }
+        .pie svg { width: 100%; height: 100%; overflow: visible; }
+        .pie path { stroke: var(--surface-solid); stroke-width: 2; stroke-linejoin: round; transition: opacity 0.15s; cursor: default; }
+        .pie.dim path:not(.hot) { opacity: 0.35; }
+        .pie-centre { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
+        .pie-centre b { font-family: var(--display); font-size: 1.9rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+        .pie-centre span { color: var(--muted); font-size: 0.78rem; margin-top: 6px; }
+        .pie-legend { display: grid; gap: 4px; max-width: 560px; }
+        .pie-row { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto 56px; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 10px; font-size: 0.9rem; }
+        .pie-row:hover, .pie-row.hot { background: var(--surface-2); }
+        .pie-row i { width: 12px; height: 12px; border-radius: 4px; }
+        .pie-row .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+        .pie-row .tm { font-family: var(--mono); color: var(--ink-2); font-size: 0.82rem; }
+        .pie-row .pc { font-family: var(--mono); font-weight: 700; text-align: right; }
+        .pie-row.zero { color: var(--muted); }
+
         /* ---------- Race day ---------- */
         .race-head { display: grid; gap: 14px; }
         .race-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
@@ -962,6 +982,9 @@
             .ring-wrap.lg { width: 92px; height: 92px; }
             .live-btn .mono { display: none; }
             .schedule-row { grid-template-columns: 1fr 1fr; }
+            .pie-wrap { grid-template-columns: 1fr; justify-items: center; gap: 18px; }
+            .pie { width: 210px; height: 210px; }
+            .pie-legend { width: 100%; }
             .lane { grid-template-columns: 1fr; }
             .lane-who { border-right: 0; padding: 8px 12px; }
             .turf { min-height: 62px; }
@@ -1074,6 +1097,19 @@
                     <div class="stat-sub">of the team's online time</div>
                 </article>
             </div>
+
+            <section class="card">
+                <div class="card-head">
+                    <div>
+                        <h3>Who's unavailable</h3>
+                        <p id="pieSub">Each person's share of the team's unavailable time.</p>
+                    </div>
+                </div>
+                <div class="pie-wrap">
+                    <div id="unavailPie" class="pie"></div>
+                    <div id="unavailLegend" class="pie-legend"></div>
+                </div>
+            </section>
 
             <section class="card">
                 <div class="card-head">
@@ -1430,7 +1466,7 @@
             viewTitle: $("viewTitle"), viewSubtitle: $("viewSubtitle"), periodControl: $("periodControl"),
             themeBtn: $("themeBtn"), monitorBtn: $("monitorBtn"),
             errorBanner: $("errorBanner"), errorText: $("errorText"), toast: $("toast"), tooltip: $("tooltip"),
-            setupArea: $("setupArea"), nowAvailable: $("nowAvailable"), nowTotal: $("nowTotal"),
+            setupArea: $("setupArea"), unavailPie: $("unavailPie"), unavailLegend: $("unavailLegend"), pieSub: $("pieSub"), nowAvailable: $("nowAvailable"), nowTotal: $("nowTotal"),
             compoBar: $("compoBar"), compoLegend: $("compoLegend"), teamTimeline: $("teamTimeline"),
             statusFilter: $("statusFilter"), peopleSearch: $("peopleSearch"), sortSelect: $("sortSelect"),
             teamGrid: $("teamGrid"), recentFeed: $("recentFeed"),
@@ -1905,6 +1941,67 @@
             document.querySelectorAll("[data-period-label]").forEach((el) => {
                 el.textContent = el.closest(".stat-card") ? `${PERIOD_LABELS[appState.period]} · all tracked people` : PERIOD_LABELS[appState.period];
             });
+        }
+
+        // Pie of the team's unavailable time, one slice per person, largest first.
+        function renderUnavailablePie(now) {
+            const users = getMonitoredUsers();
+            const r = periodRange(now);
+            ui.pieSub.textContent = `${PERIOD_LABELS[appState.period]} · each person's share of the team's unavailable time.`;
+            const many = users.length > 8;
+            let rows = users.map((u, i) => ({
+                id: u.id, name: userLabel(u), ms: totalsBetween(u.id, r.from, r.to, now).unavailable,
+                colour: many ? null : `var(--s${i + 1})` // colour follows the person (their place in the tracked list)
+            })).sort((a, b) => b.ms - a.ms || a.name.localeCompare(b.name));
+            if (many) {
+                const top = rows.slice(0, 7).map((row, i) => ({ ...row, colour: `var(--s${i + 1})` }));
+                const rest = rows.slice(7);
+                rows = top.concat({ id: "__others", name: `${rest.length} others`, ms: rest.reduce((n, x) => n + x.ms, 0), colour: "var(--offline)" });
+            }
+            const total = rows.reduce((n, x) => n + x.ms, 0);
+            const pct = (ms) => (total ? (ms / total) * 100 : 0);
+            const pctLabel = (ms) => { const v = pct(ms); return v > 0 && v < 1 ? "<1%" : `${Math.round(v)}%`; };
+
+            // Donut slices
+            const cx = 120, cy = 120, R = 112, r0 = 70;
+            const pt = (rad, a) => [cx + rad * Math.sin(a), cy - rad * Math.cos(a)];
+            let paths = "";
+            if (!total) {
+                paths = `<circle cx="${cx}" cy="${cy}" r="${(R + r0) / 2}" fill="none" stroke="var(--surface-2)" stroke-width="${R - r0}"/>`;
+            } else {
+                let a0 = 0;
+                const slices = rows.filter((x) => x.ms > 0);
+                for (const x of slices) {
+                    const a1 = a0 + (x.ms / total) * Math.PI * 2;
+                    const tip = `${x.name}: ${fmt(x.ms)} unavailable (${pctLabel(x.ms)} of the team's)`;
+                    if (slices.length === 1) {
+                        paths += `<path data-slice="${escapeHtml(x.id)}" data-tip="${escapeHtml(tip)}" fill="${x.colour}" fill-rule="evenodd" d="M${cx} ${cy - R}A${R} ${R} 0 1 1 ${cx - 0.01} ${cy - R}ZM${cx} ${cy - r0}A${r0} ${r0} 0 1 0 ${cx + 0.01} ${cy - r0}Z"/>`;
+                    } else {
+                        const big = a1 - a0 > Math.PI ? 1 : 0;
+                        const [x1, y1] = pt(R, a0), [x2, y2] = pt(R, a1), [x3, y3] = pt(r0, a1), [x4, y4] = pt(r0, a0);
+                        paths += `<path data-slice="${escapeHtml(x.id)}" data-tip="${escapeHtml(tip)}" fill="${x.colour}" d="M${x1.toFixed(2)} ${y1.toFixed(2)}A${R} ${R} 0 ${big} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}L${x3.toFixed(2)} ${y3.toFixed(2)}A${r0} ${r0} 0 ${big} 0 ${x4.toFixed(2)} ${y4.toFixed(2)}Z"/>`;
+                    }
+                    a0 = a1;
+                }
+            }
+            ui.unavailPie.innerHTML = `<svg viewBox="0 0 240 240" role="img" aria-label="Unavailable time by person">${paths}</svg>
+                <div class="pie-centre"><b>${escapeHtml(total ? fmtShort(total) : "0m")}</b><span>unavailable</span></div>`;
+
+            ui.unavailLegend.innerHTML = users.length
+                ? rows.map((x) => `
+                    <div class="pie-row${x.ms ? "" : " zero"}" data-slice="${escapeHtml(x.id)}">
+                        <i style="background:${x.ms ? x.colour : "var(--surface-2)"}"></i>
+                        <span class="nm">${escapeHtml(x.name)}</span>
+                        <span class="tm">${escapeHtml(fmtShort(x.ms))}</span>
+                        <span class="pc">${pctLabel(x.ms)}</span>
+                    </div>`).join("")
+                : `<div class="empty-state"><strong>No one tracked yet</strong>Add people in Settings.</div>`;
+        }
+
+        function highlightSlice(id) {
+            ui.unavailPie.classList.toggle("dim", Boolean(id));
+            ui.unavailPie.querySelectorAll("path").forEach((el) => el.classList.toggle("hot", el.dataset.slice === id));
+            ui.unavailLegend.querySelectorAll(".pie-row").forEach((el) => el.classList.toggle("hot", el.dataset.slice === id));
         }
 
         function renderFilters() {
@@ -2575,6 +2672,7 @@
             renderTopbar();
             renderSetup();
             renderHero();
+            renderUnavailablePie(now);
             renderFilters();
             renderTeamTimeline(now);
             renderTeamGrid(now);
@@ -3029,6 +3127,14 @@
                 row.classList.toggle("off", !on);
                 row.querySelectorAll('input[type="time"]').forEach((i) => { i.disabled = !on; });
             }
+        });
+
+        [ui.unavailPie, ui.unavailLegend].forEach((el) => {
+            el.addEventListener("mouseover", (event) => {
+                const hit = event.target.closest("[data-slice]");
+                highlightSlice(hit ? hit.dataset.slice : null);
+            });
+            el.addEventListener("mouseleave", () => highlightSlice(null));
         });
 
         ui.leaveForm.addEventListener("submit", (event) => {
